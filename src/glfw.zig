@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 /// Thin Zig wrapper around the GLFW C library (3.4).
 /// - Vendored C sources are built via build.zig (see build.zig.zon "glfw-c").
@@ -8,6 +9,13 @@ pub const c = @cImport({
     @cDefine("GLFW_INCLUDE_NONE", "1");
     @cInclude("GLFW/glfw3.h");
 });
+
+/// Native Win32 helper symbol from GLFW.
+///
+/// We declare this ourselves instead of pulling in <glfw3native.h> and
+/// Windows headers, to keep `glfw-zig` lightweight and header-independent.
+/// This is only actually defined by GLFW on Win32 builds.
+extern fn glfwGetWin32Window(window: ?*c.GLFWwindow) ?*anyopaque;
 
 pub const Window = c.GLFWwindow;
 pub const Monitor = c.GLFWmonitor;
@@ -183,6 +191,22 @@ pub fn getKey(window: *Window, key: c_int) c_int {
 /// Pump the event queue.
 pub fn pollEvents() void {
     c.glfwPollEvents();
+}
+
+/// Waits until at least one event has been placed in the event queue,
+/// or until the given timeout elapses.
+///
+/// This is a direct wrapper over `glfwWaitEventsTimeout`. It requires
+/// that `glfw.init()` has been called.
+pub fn waitEventsTimeout(timeout_seconds: f64) void {
+    c.glfwWaitEventsTimeout(timeout_seconds);
+}
+
+/// Posts an empty event to wake up a thread blocked in waitEvents*.
+///
+/// Thin wrapper over `glfwPostEmptyEvent`.
+pub fn postEmptyEvent() void {
+    c.glfwPostEmptyEvent();
 }
 
 /// V-sync helper: set swap interval.
@@ -575,6 +599,28 @@ pub fn getRequiredInstanceExtensions(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Native platform handles (Win32)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Return the native Win32 HWND for a GLFW window (Windows only).
+///
+/// This is a thin wrapper around `glfwGetWin32Window`. The return type is
+/// an opaque pointer so that `glfw-zig` does not need to pull in Win32
+/// headers; downstream code (e.g. Vulkan/OpenXR layers) can cast it to the
+/// appropriate handle type.
+///
+/// On non-Windows platforms this function is not meaningful and may always
+/// return null; `glfw-zig` currently targets Win32 + WGL.
+pub fn getWin32Window(window: *Window) ?*anyopaque {
+    if (builtin.os.tag != .windows) {
+        // Defensive; on non-Windows builds we don't expect this to be usable.
+        return null;
+    }
+
+    return glfwGetWin32Window(window);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Inline tests (unit + light conformance)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -814,4 +860,33 @@ test "platform API best-effort" {
         // On any sane build, the current platform should be supported.
         try std.testing.expect(platformSupported(plat));
     }
+}
+
+test "native Win32 window handle best-effort" {
+    if (builtin.os.tag != .windows) return;
+
+    _ = init() catch return;
+    defer terminate();
+
+    const title = "glfw-zig-win32-handle-test\x00";
+    const window = createWindow(64, 64, title, null, null) catch return;
+    defer destroyWindow(window);
+
+    const hwnd = getWin32Window(window) orelse return;
+    // Just sanity: pointer should be non-null.
+    try std.testing.expect(@intFromPtr(hwnd) != 0);
+}
+
+test "waitEventsTimeout + postEmptyEvent basic smoke" {
+    _ = init() catch return;
+    defer terminate();
+
+    const title = "glfw-zig-wait-test\x00";
+    const window = createWindow(32, 32, title, null, null) catch return;
+    defer destroyWindow(window);
+
+    // Schedule a wake-up and then wait with a small timeout. We don't assert
+    // anything beyond "does not deadlock or crash".
+    postEmptyEvent();
+    waitEventsTimeout(0.05);
 }

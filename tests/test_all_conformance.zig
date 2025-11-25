@@ -12,4 +12,6 @@ test "conformance suite" {
     _ = @import("conformance/vulkan.zig");
     _ = @import("conformance/input_modes.zig");
     _ = @import("conformance/clipboard.zig");
+    _ = @import("conformance/native_handles.zig");
+    _ = @import("conformance/event_wait.zig");
 }
