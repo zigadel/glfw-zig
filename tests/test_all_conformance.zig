@@ -10,4 +10,6 @@ test "conformance suite" {
     _ = @import("conformance/monitors.zig");
     _ = @import("conformance/window_hints.zig");
     _ = @import("conformance/vulkan.zig");
+    _ = @import("conformance/input_modes.zig");
+    _ = @import("conformance/clipboard.zig");
 }

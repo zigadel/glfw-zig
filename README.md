@@ -48,6 +48,12 @@ Zig nightly, full GLFW access, and future-ready for Vulkan, OpenXR, and WebGPU.
 - `getVideoModes(allocator, monitor) ![]VideoMode`
 - `getMonitorName(monitor) ?[:0]const u8`
 
+**Vulkan**
+
+- `vulkanSupported() bool`
+- `getRequiredInstanceExtensions(allocator) !?[][:0]const u8`
+
+
 All of the above are covered by:
 
 - Inline tests in `src/glfw.zig`
@@ -61,6 +67,7 @@ Planned next slices (not implemented yet):
 - Joystick / gamepad helpers
 - Callback registration
 - Vulkan helper functions (extensions, surface creation) suitable for use with `vulkan-zig`
+- 
 
 ## Requirements
 

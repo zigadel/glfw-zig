@@ -18,6 +18,15 @@ test "conformance: public API surface compiles" {
     _ = glfw.getCursorPos;
     _ = glfw.setCursorPos;
 
+    // NEW:
+    _ = glfw.setInputMode;
+    _ = glfw.getInputMode;
+    _ = glfw.setCursor;
+    _ = glfw.createStandardCursor;
+    _ = glfw.destroyCursor;
+    _ = glfw.setClipboardString;
+    _ = glfw.getClipboardString;
+
     // Types must exist.
     _ = glfw.Window;
     _ = glfw.Monitor;

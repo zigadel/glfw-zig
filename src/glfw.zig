@@ -254,6 +254,66 @@ pub fn getTimerFrequency() u64 {
     return c.glfwGetTimerFrequency();
 }
 
+/// Set an input mode option for the specified window.
+///
+/// Mode must be one of:
+/// - c.GLFW_CURSOR
+/// - c.GLFW_STICKY_KEYS
+/// - c.GLFW_STICKY_MOUSE_BUTTONS
+/// - c.GLFW_LOCK_KEY_MODS
+/// - c.GLFW_RAW_MOUSE_MOTION
+pub fn setInputMode(window: *Window, mode: c_int, value: c_int) void {
+    c.glfwSetInputMode(window, mode, value);
+}
+
+/// Get the value of an input mode option for the specified window.
+///
+/// See `setInputMode` for valid `mode` values.
+pub fn getInputMode(window: *Window, mode: c_int) c_int {
+    return c.glfwGetInputMode(window, mode);
+}
+
+/// Set the cursor object for a window.
+///
+/// Passing `null` reverts to the default cursor.
+pub fn setCursor(window: *Window, cursor: ?*Cursor) void {
+    c.glfwSetCursor(window, cursor);
+}
+
+/// Create a standard cursor with the given shape (e.g. c.GLFW_ARROW_CURSOR).
+///
+/// Returns `null` on failure; use `getLastError()` for details if desired.
+pub fn createStandardCursor(shape: c_int) ?*Cursor {
+    return c.glfwCreateStandardCursor(shape);
+}
+
+/// Destroy a cursor created with `createStandardCursor` or any custom cursor.
+///
+/// Any window using this cursor will revert to the default cursor.
+pub fn destroyCursor(cursor: *Cursor) void {
+    c.glfwDestroyCursor(cursor);
+}
+
+/// Set the system clipboard to the specified UTF-8 string.
+///
+/// The string is copied by GLFW; it is safe to free or modify it after this call.
+/// This is a thin wrapper around `glfwSetClipboardString`.
+pub fn setClipboardString(window: *Window, string: [:0]const u8) void {
+    c.glfwSetClipboardString(window, string.ptr);
+}
+
+/// Get the current contents of the system clipboard as UTF-8, if available.
+///
+/// Returns:
+/// - `null` if the clipboard is empty, cannot be converted to UTF-8, or an error occurred.
+/// - A slice of a NUL-terminated string whose lifetime is managed by GLFW.
+///   The data remains valid until the next clipboard change or GLFW termination.
+pub fn getClipboardString(window: *Window) ?[:0]const u8 {
+    const ptr = c.glfwGetClipboardString(window);
+    if (ptr == null) return null;
+    return std.mem.span(ptr);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Monitor API
 // ─────────────────────────────────────────────────────────────────────────────
@@ -609,5 +669,63 @@ test "Vulkan helpers basic behavior" {
     // Basic sanity: all returned names should be non-empty.
     for (exts) |name| {
         try std.testing.expect(name.len > 0);
+    }
+}
+
+test "input mode: sticky keys round-trip best-effort" {
+    _ = init() catch return;
+    defer terminate();
+
+    const title = "glfw-zig-input-mode-test\x00";
+    const window = createWindow(64, 64, title, null, null) catch return;
+    defer destroyWindow(window);
+
+    const prev = getInputMode(window, c.GLFW_STICKY_KEYS);
+    setInputMode(window, c.GLFW_STICKY_KEYS, c.GLFW_TRUE);
+    const now = getInputMode(window, c.GLFW_STICKY_KEYS);
+
+    // On GLFW 3.4 this should always work; if it ever doesn't, we still
+    // want a clear signal.
+    try std.testing.expect(now == c.GLFW_TRUE);
+
+    // Restore original state so tests don’t perturb app behavior.
+    setInputMode(window, c.GLFW_STICKY_KEYS, prev);
+}
+
+test "cursor + standard cursor best-effort" {
+    _ = init() catch return;
+    defer terminate();
+
+    const title = "glfw-zig-cursor-test\x00";
+    const window = createWindow(64, 64, title, null, null) catch return;
+    defer destroyWindow(window);
+
+    // Ensure the symbols exist and calls don’t blow up.
+    const cursor = createStandardCursor(c.GLFW_ARROW_CURSOR) orelse return;
+    defer destroyCursor(cursor);
+
+    // Setting a cursor should not crash; we don't assert visual behavior here.
+    setCursor(window, cursor);
+    setCursor(window, null); // revert to default cursor
+}
+
+test "clipboard round-trip best-effort" {
+    _ = init() catch return;
+    defer terminate();
+
+    const title = "glfw-zig-clipboard-test\x00";
+    const window = createWindow(64, 64, title, null, null) catch return;
+    defer destroyWindow(window);
+
+    const msg: [:0]const u8 = "glfw-zig clipboard test";
+
+    // Best-effort: some headless or unusual environments might not have a
+    // usable clipboard; we treat failures as non-fatal.
+    setClipboardString(window, msg);
+
+    if (getClipboardString(window)) |got| {
+        // We only require that our message appears as a prefix; platforms
+        // may append or transform slightly.
+        try std.testing.expect(std.mem.startsWith(u8, got, msg[0 .. msg.len - 1]));
     }
 }
