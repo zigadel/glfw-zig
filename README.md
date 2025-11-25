@@ -14,29 +14,53 @@ Zig nightly, full GLFW access, and future-ready for Vulkan, OpenXR, and WebGPU.
 
 ## Status
 
-- Vendored GLFW 3.4 C sources (fetched via `build.zig.zon` as `glfw-c`)
-- Windows (Win32 + WGL) backend wired and working
-- Thin wrapper in `src/glfw.zig` with:
-  - `init/terminate`
-  - version helpers
-  - window lifecycle
-  - key input, cursor position, event pump
-  - structured error reporting (`getLastError`)
-- Inline unit tests inside `src/glfw.zig`
-- Test suites:
-  - Conformance (`tests/conformance/*`)
-  - Integration (`tests/integration/*`)
-  - End-to-end (`tests/e2e/*`)
-- `src/sample.zig` that opens a window and handles `ESC` to quit
+`glfw-zig` already covers the pieces you need for a minimal game / engine on GLFW 3.4:
 
-Planned (scaffolding already reflected in the directory layout):
+**Core lifecycle & errors**
 
-- More wrapper modules (`monitor`, `input`, `time`, `vulkan`, `openxr`, etc.)
-- Vulkan and OpenXR examples (using `vulkan-zig` and `openxr-zig`)
-- Linux / macOS backends (X11/Wayland, Cocoa)
-- Higher-level “App/Context” helper around init/terminate + main loop
+- `init`, `terminate`
+- `GlfwError` for high-level failures
+- `getLastError()` for full error introspection
 
----
+**Version & timing**
+
+- `getVersion`, `getVersionStruct`, `getVersionString`
+- `getTime`, `setTime`, `getTimerValue`, `getTimerFrequency`
+
+**Windows**
+
+- `createWindow`, `destroyWindow`
+- `windowShouldClose`, `setWindowShouldClose`
+- `swapBuffers`
+
+**Input / event pump**
+
+- Key constants (`KeyEscape`, `Press`, `Release`, …)
+- `getKey(window, key)`
+- Cursor position helpers (`getCursorPos`, `setCursorPos`)
+- `pollEvents()`
+
+**Monitors (Zig-friendly helpers)**
+
+- `getMonitors(allocator) ![]*Monitor` — snapshot of current monitors
+- `getPrimaryMonitor() ?*Monitor`
+- `getVideoMode(monitor) ?VideoMode`
+- `getVideoModes(allocator, monitor) ![]VideoMode`
+- `getMonitorName(monitor) ?[:0]const u8`
+
+All of the above are covered by:
+
+- Inline tests in `src/glfw.zig`
+- Conformance / integration / end-to-end suites under `tests/`, wired through `zig build test`
+
+Planned next slices (not implemented yet):
+
+- Window hints + attribute getters/setters
+- Cursor modes & standard cursors
+- Clipboard helpers
+- Joystick / gamepad helpers
+- Callback registration
+- Vulkan helper functions (extensions, surface creation) suitable for use with `vulkan-zig`
 
 ## Requirements
 
@@ -45,7 +69,7 @@ Planned (scaffolding already reflected in the directory layout):
 - On Windows: typical system libs are linked automatically:
   - `user32`, `gdi32`, `shell32`, `advapi32`, `winmm`
 
-You do *not* need a system-installed GLFW; the C sources are pulled from GitHub and built as part of the Zig build.
+You do _not_ need a system-installed GLFW; the C sources are pulled from GitHub and built as part of the Zig build.
 
 ---
 
@@ -243,7 +267,7 @@ pub fn main() void {
 
 - build.zig.zon fetches the official GLFW 3.4 release tarball and compiles:
 
-    - Common sources: `context.c`, `init.c`, `input.c`, `monitor.c`, platform.c, vulkan.c, window.c, and null backends.
+  - Common sources: `context.c`, `init.c`, `input.c`, `monitor.c`, platform.c, vulkan.c, window.c, and null backends.
   - Windows-specific sources: `win32_*.c`, `wgl_context.c`, with `_GLFW_WIN32`, `UNICODE`, `_UNICODE` defined.
 
 **Thin wrapper, not a rewrite**
