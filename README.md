@@ -1,4 +1,4 @@
-# zglfw — Thin Zig Wrapper for GLFW 3.4
+# zglfw — Zig Wrapper for GLFW 3.4
 
 `zglfw` is a **thin, idiomatic Zig wrapper** around the C GLFW library (3.4).  
 It keeps the **full power of GLFW** while giving you:
@@ -15,27 +15,27 @@ Zig nightly, full GLFW access, and future-ready for Vulkan, OpenXR, and WebGPU.
 
 ## Status
 
-- ✅ Vendored GLFW 3.4 C sources (fetched via `build.zig.zon` as `glfw-c`)
-- ✅ Windows (Win32 + WGL) backend wired and working
-- ✅ Thin wrapper in `src/glfw.zig` with:
+- Vendored GLFW 3.4 C sources (fetched via `build.zig.zon` as `glfw-c`)
+- Windows (Win32 + WGL) backend wired and working
+- Thin wrapper in `src/glfw.zig` with:
   - `init/terminate`
   - version helpers
   - window lifecycle
   - key input, cursor position, event pump
   - structured error reporting (`getLastError`)
-- ✅ Inline unit tests inside `src/glfw.zig`
-- ✅ Test suites:
+- Inline unit tests inside `src/glfw.zig`
+- Test suites:
   - Conformance (`tests/conformance/*`)
   - Integration (`tests/integration/*`)
   - End-to-end (`tests/e2e/*`)
-- ✅ `src/sample.zig` that opens a window and handles `ESC` to quit
+- `src/sample.zig` that opens a window and handles `ESC` to quit
 
 Planned (scaffolding already reflected in the directory layout):
 
-- 🔶 More wrapper modules (`monitor`, `input`, `time`, `vulkan`, `openxr`, etc.)
-- 🔶 Vulkan and OpenXR examples (using `vulkan-zig` and `openxr-zig`)
-- 🔶 Linux / macOS backends (X11/Wayland, Cocoa)
-- 🔶 Higher-level “App/Context” helper around init/terminate + main loop
+- More wrapper modules (`monitor`, `input`, `time`, `vulkan`, `openxr`, etc.)
+- Vulkan and OpenXR examples (using `vulkan-zig` and `openxr-zig`)
+- Linux / macOS backends (X11/Wayland, Cocoa)
+- Higher-level “App/Context” helper around init/terminate + main loop
 
 ---
 
