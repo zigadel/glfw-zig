@@ -65,9 +65,43 @@ pub fn getVersionStruct() Version {
 
 /// Detailed error info from glfwGetError. The description may be null.
 pub const ErrorInfo = struct {
+    /// Raw GLFW error code as returned by glfwGetError.
     code: c_int,
+
+    /// Optional UTF-8 description, owned by GLFW (do not free).
     description: ?[]const u8,
+
+    /// Attempt to map the raw error code to a strongly-typed GLFW error code.
+    /// Returns null if the code is not one of the known GLFW error constants.
+    pub fn codeEnum(self: ErrorInfo) ?ErrorCode {
+        return errorCodeFromC(self.code);
+    }
 };
+
+/// All documented GLFW error codes as of GLFW 3.4, mapped 1:1 to their C values.
+pub const ErrorCode = enum(c_int) {
+    no_error = c.GLFW_NO_ERROR,
+    not_initialized = c.GLFW_NOT_INITIALIZED,
+    no_current_context = c.GLFW_NO_CURRENT_CONTEXT,
+    invalid_enum = c.GLFW_INVALID_ENUM,
+    invalid_value = c.GLFW_INVALID_VALUE,
+    out_of_memory = c.GLFW_OUT_OF_MEMORY,
+    api_unavailable = c.GLFW_API_UNAVAILABLE,
+    version_unavailable = c.GLFW_VERSION_UNAVAILABLE,
+    platform_error = c.GLFW_PLATFORM_ERROR,
+    format_unavailable = c.GLFW_FORMAT_UNAVAILABLE,
+    no_window_context = c.GLFW_NO_WINDOW_CONTEXT,
+    cursor_unavailable = c.GLFW_CURSOR_UNAVAILABLE,
+    feature_unavailable = c.GLFW_FEATURE_UNAVAILABLE,
+    feature_unimplemented = c.GLFW_FEATURE_UNIMPLEMENTED,
+    platform_unavailable = c.GLFW_PLATFORM_UNAVAILABLE,
+};
+
+/// Best-effort mapping from a raw GLFW error code to an ErrorCode enum.
+/// Returns null if the code is not a known GLFW error constant.
+pub fn errorCodeFromC(code: c_int) ?ErrorCode {
+    return std.meta.intToEnum(ErrorCode, code) catch null;
+}
 
 /// Retrieve the last GLFW error, if any.
 /// This wraps glfwGetError and turns the C string into a Zig slice.
@@ -222,6 +256,31 @@ pub fn getCursorPos(window: *Window) struct { x: f64, y: f64 } {
 /// Set the current cursor position in screen coordinates.
 pub fn setCursorPos(window: *Window, x: f64, y: f64) void {
     c.glfwSetCursorPos(window, x, y);
+}
+
+/// Supported GLFW platform identifiers for glfwGetPlatform / glfwPlatformSupported.
+pub const Platform = enum(c_int) {
+    any = c.GLFW_ANY_PLATFORM,
+    win32 = c.GLFW_PLATFORM_WIN32,
+    cocoa = c.GLFW_PLATFORM_COCOA,
+    wayland = c.GLFW_PLATFORM_WAYLAND,
+    x11 = c.GLFW_PLATFORM_X11,
+    null = c.GLFW_PLATFORM_NULL,
+};
+
+/// Query the currently selected platform.
+///
+/// Returns null if GLFW reports an unknown or unsupported platform value.
+pub fn getPlatform() ?Platform {
+    const raw: c_int = c.glfwGetPlatform();
+    if (raw == 0) return null;
+
+    return std.meta.intToEnum(Platform, raw) catch null;
+}
+
+/// Query whether the given platform is supported by this GLFW build.
+pub fn platformSupported(platform: Platform) bool {
+    return c.glfwPlatformSupported(@intFromEnum(platform)) == c.GLFW_TRUE;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -727,5 +786,32 @@ test "clipboard round-trip best-effort" {
         // We only require that our message appears as a prefix; platforms
         // may append or transform slightly.
         try std.testing.expect(std.mem.startsWith(u8, got, msg[0 .. msg.len - 1]));
+    }
+}
+
+test "errorCodeFromC round-trip for known values" {
+    const values = std.enums.values(ErrorCode);
+    for (values) |code| {
+        const raw: c_int = @intFromEnum(code);
+        const mapped = errorCodeFromC(raw).?;
+        try std.testing.expectEqual(code, mapped);
+    }
+}
+
+test "ErrorInfo.codeEnum best-effort" {
+    // Force a GLFW error by calling a GLFW function before init.
+    var count: c_int = 0;
+    _ = c.glfwGetMonitors(&count);
+
+    const info_opt = getLastError() orelse return;
+    // We don't assert which error it is, only that mapping does not crash.
+    _ = info_opt.codeEnum();
+}
+
+test "platform API best-effort" {
+    const plat_opt = getPlatform();
+    if (plat_opt) |plat| {
+        // On any sane build, the current platform should be supported.
+        try std.testing.expect(platformSupported(plat));
     }
 }
