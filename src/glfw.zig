@@ -1,5 +1,9 @@
 const std = @import("std");
 
+/// Thin Zig wrapper around the GLFW C library (3.4).
+/// - Vendored C sources are built via build.zig (see build.zig.zon "glfw-c").
+/// - This module exposes a small, idiomatic Zig surface,
+///   plus access to the raw C API via `glfw.c` for escape hatches.
 pub const c = @cImport({
     @cDefine("GLFW_INCLUDE_NONE", "1");
     @cInclude("GLFW/glfw3.h");
@@ -72,11 +76,9 @@ pub const ErrorInfo = struct {
 /// cimport:      `pub extern fn glfwGetError(description: [*c][*c]const u8) c_int;`
 pub fn getLastError() ?ErrorInfo {
     // Raw C pointer to char, GLFW will write into this.
-    // We don't need an initial value; we only read it if code != NO_ERROR.
     var c_desc: [*c]const u8 = undefined;
 
     // glfwGetError takes "const char**" → [*c][*c]const u8.
-    // New-style @ptrCast: one argument, type comes from the LHS.
     const desc_param: [*c][*c]const u8 = @ptrCast(&c_desc);
 
     const code = c.glfwGetError(desc_param);
@@ -96,6 +98,10 @@ pub fn getLastError() ?ErrorInfo {
         .description = desc_slice,
     };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Window API
+// ─────────────────────────────────────────────────────────────────────────────
 
 /// Create a window with default hints.
 ///
@@ -150,6 +156,11 @@ pub fn swapInterval(interval: c_int) void {
     c.glfwSwapInterval(interval);
 }
 
+/// Swap buffers for a window's current context (typical render loop call).
+pub fn swapBuffers(window: *Window) void {
+    c.glfwSwapBuffers(window);
+}
+
 /// Get the current cursor position in screen coordinates.
 pub fn getCursorPos(window: *Window) struct { x: f64, y: f64 } {
     var x: f64 = 0;
@@ -162,6 +173,10 @@ pub fn getCursorPos(window: *Window) struct { x: f64, y: f64 } {
 pub fn setCursorPos(window: *Window, x: f64, y: f64) void {
     c.glfwSetCursorPos(window, x, y);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Time / timer API
+// ─────────────────────────────────────────────────────────────────────────────
 
 /// Returns the GLFW time in seconds as an f64.
 /// This does **not** require glfw.init() to succeed.
@@ -182,9 +197,51 @@ pub fn getTimerValue() u64 {
 }
 
 /// Returns the raw timer frequency (ticks per second).
-/// Guaranteed by GLFW to be non-zero on supported platforms.
+/// On most platforms this will be non-zero if a high-resolution timer is
+/// available, but some environments may report 0; callers must handle both
+/// cases (see tests).
 pub fn getTimerFrequency() u64 {
     return c.glfwGetTimerFrequency();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Monitor API
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// High-level helper: returns a Zig-owned slice of monitor handles.
+///
+/// The slice must be freed by the caller with the same allocator.
+/// This is a **snapshot** of the monitor list at call time; if the monitor
+/// configuration changes, GLFW may invalidate the underlying C array, but this
+/// copied slice remains valid as an array of opaque handles.
+///
+/// This function only fails on allocation failure.
+pub fn getMonitors(allocator: std.mem.Allocator) ![]*Monitor {
+    var count: c_int = 0;
+    const raw = c.glfwGetMonitors(&count);
+
+    // If there are no monitors, GLFW sets count to 0; we never touch `raw`.
+    if (count <= 0) {
+        return allocator.alloc(*Monitor, 0);
+    }
+
+    const len: usize = @intCast(count);
+
+    // `raw` is some form of pointer to monitor pointers. We don't care about the
+    // exact pointer flavor; we just reinterpret its address as `[ * ]*Monitor`
+    // and copy `len` elements out.
+    const addr = @intFromPtr(raw);
+    if (addr == 0) {
+        // Extremely defensive: treat as empty if address is somehow null.
+        return allocator.alloc(*Monitor, 0);
+    }
+
+    const base: [*]*Monitor = @ptrFromInt(addr);
+    const src = base[0..len];
+
+    const dst = try allocator.alloc(*Monitor, len);
+    std.mem.copyForwards(*Monitor, dst, src);
+    return dst;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

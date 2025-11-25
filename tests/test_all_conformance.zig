@@ -7,4 +7,5 @@ test "conformance suite" {
     _ = @import("conformance/error_safety.zig");
     _ = @import("conformance/window_lifecycle.zig");
     _ = @import("conformance/time.zig");
+    _ = @import("conformance/monitors.zig");
 }
