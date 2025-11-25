@@ -10,7 +10,7 @@ test "integration: basic window lifecycle and flags" {
     }
     defer glfw.terminate();
 
-    const title = "zglfw-integration\x00";
+    const title = "glfw-zig-integration\x00";
     const window = glfw.createWindow(320, 240, title, null, null) catch return;
     defer glfw.destroyWindow(window);
 

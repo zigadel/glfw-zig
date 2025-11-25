@@ -1,6 +1,6 @@
-# zglfw — Zig Wrapper for GLFW 3.4
+# glfw-zig — Zig Wrapper for GLFW 3.4
 
-`zglfw` is a **thin, idiomatic Zig wrapper** around the C GLFW library (3.4).  
+`glfw-zig` is a **thin, idiomatic Zig wrapper** around the C GLFW library (3.4).  
 It keeps the **full power of GLFW** while giving you:
 
 - Zig-style types and error sets
@@ -8,7 +8,6 @@ It keeps the **full power of GLFW** while giving you:
 - A clean test pyramid (unit + conformance + integration + e2e)
 - A simple `sample.zig` you can use as a starting point
 
-The goal is a **“forever good”** building block for graphics / game engines:
 Zig nightly, full GLFW access, and future-ready for Vulkan, OpenXR, and WebGPU.
 
 ---
@@ -123,7 +122,7 @@ Sample finished cleanly.
 
 …and an actual GLFW window that closes when you press ESC.
 
-## Using zglfw in Your Own Project
+## Using glfw-zig in Your Own Project
 
 ### 1. Add as a dependency (Zon)
 
@@ -134,7 +133,7 @@ In your project’s `build.zig.zon`, add a dependency pointing to this repo (URL
     .name = "my-project",
     .version = "0.1.0",
     .dependencies = .{
-        .zglfw = .{
+        .glfw-zig = .{
             .url = "https://github.com/<you-or-org>/glfw-zig-wrapper/archive/refs/tags/v0.1.0.tar.gz",
             .hash = "<replace-with-zon-hash>",
         },
@@ -153,20 +152,20 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Dependency on zglfw
-    const zglfw_dep = b.dependency("zglfw", .{
+    // Dependency on glfw-zig
+    const glfw-zig_dep = b.dependency("glfw-zig", .{
         .target = target,
         .optimize = optimize,
     });
 
-    // Depending on how zglfw is exported, you have two common options:
+    // Depending on how glfw-zig is exported, you have two common options:
     //
     // (A) The "wrapper as module" style (recommended long-term):
-    // const glfw_mod = zglfw_dep.module("glfw");
+    // const glfw_mod = glfw-zig_dep.module("glfw");
     //
     // (B) The "addImport" style (same pattern this repo uses for src/sample.zig):
     const glfw_mod = b.createModule(.{
-        .root_source_file = zglfw_dep.path("src/glfw.zig"),
+        .root_source_file = glfw-zig_dep.path("src/glfw.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -183,16 +182,16 @@ pub fn build(b: *std.Build) void {
         .root_module = exe_mod,
     });
 
-    // Link the vendored GLFW C lib from zglfw
-    const glfw_c_lib = zglfw_dep.artifact("glfw_c") catch
-        @panic("zglfw must expose a 'glfw_c' static library artifact");
+    // Link the vendored GLFW C lib from glfw-zig
+    const glfw_c_lib = glfw-zig_dep.artifact("glfw_c") catch
+        @panic("glfw-zig must expose a 'glfw_c' static library artifact");
     exe.linkLibrary(glfw_c_lib);
 
     b.installArtifact(exe);
 }
 ```
 
-> **Note**: The packaging/export story may evolve slightly as Zig’s build system stabilizes. The intent is that eventually you can treat `zglfw` as a normal Zig module (`zglfw_dep.module("glfw")`) without having to know about its internal layout.
+> **Note**: The packaging/export story may evolve slightly as Zig’s build system stabilizes. The intent is that eventually you can treat `glfw-zig` as a normal Zig module (`glfw-zig_dep.module("glfw")`) without having to know about its internal layout.
 
 ### 3. Use it from Zig
 

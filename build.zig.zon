@@ -1,9 +1,9 @@
 .{
-    .name = .zglfw,
+    .name = .glfw_zig,
 
     .version = "0.1.0",
 
-    .fingerprint = 0x6fbada335d590806,
+    .fingerprint = 0xcba456a528b4e6be,
 
     .minimum_zig_version = "0.15.1",
 

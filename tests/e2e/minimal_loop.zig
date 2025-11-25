@@ -9,7 +9,7 @@ test "e2e: tiny event loop runs without crashing" {
     }
     defer glfw.terminate();
 
-    const title = "zglfw-e2e\x00";
+    const title = "glfw-zig-e2e\x00";
     const window = glfw.createWindow(128, 128, title, null, null) catch return;
     defer glfw.destroyWindow(window);
 

@@ -205,7 +205,7 @@ test "createWindow / destroyWindow best-effort" {
     _ = init() catch return;
     defer terminate();
 
-    const title = "zglfw-test\x00";
+    const title = "glfw-zig-test\x00";
     const window = createWindow(64, 64, title, null, null) catch return;
     destroyWindow(window);
 }

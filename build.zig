@@ -125,9 +125,9 @@ pub fn build(b: *std.Build) void {
     });
     glfw_mod.addIncludePath(glfw_include);
 
-    // 3) Library artifact for the Zig wrapper: libzglfw.
+    // 3) Library artifact for the Zig wrapper: libglfw-zig.
     const lib = b.addLibrary(.{
-        .name = "zglfw",
+        .name = "glfw-zig",
         .root_module = glfw_mod,
     });
     lib.linkLibrary(glfw_c);
