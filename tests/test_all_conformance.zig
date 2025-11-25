@@ -8,4 +8,6 @@ test "conformance suite" {
     _ = @import("conformance/window_lifecycle.zig");
     _ = @import("conformance/time.zig");
     _ = @import("conformance/monitors.zig");
+    _ = @import("conformance/window_hints.zig");
+    _ = @import("conformance/vulkan.zig");
 }

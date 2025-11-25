@@ -156,6 +156,56 @@ pub fn swapInterval(interval: c_int) void {
     c.glfwSwapInterval(interval);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Window hints & attributes
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Reset all window hints to GLFW defaults.
+///
+/// Thin wrapper over `glfwDefaultWindowHints`.
+pub fn defaultWindowHints() void {
+    c.glfwDefaultWindowHints();
+}
+
+/// Set an integer window hint.
+///
+/// This is a direct wrapper over `glfwWindowHint`. You are expected to pass
+/// GLFW hint/boolean constants from `glfw.c`, e.g.:
+///
+///   glfw.windowHint(glfw.c.GLFW_RESIZABLE, glfw.c.GLFW_FALSE);
+///
+/// Hints affect **subsequent** window creations.
+pub fn windowHint(hint: c_int, value: c_int) void {
+    c.glfwWindowHint(hint, value);
+}
+
+/// Set a string window hint.
+///
+/// Thin wrapper over `glfwWindowHintString`. The `value` must be a
+/// zero-terminated UTF-8 string.
+pub fn windowHintString(hint: c_int, value: [*:0]const u8) void {
+    c.glfwWindowHintString(hint, value);
+}
+
+/// Get an integer window attribute.
+///
+/// Thin wrapper over `glfwGetWindowAttrib`. Returns the raw GLFW integer
+/// (often `GLFW_TRUE` / `GLFW_FALSE`), so callers can either compare against
+/// those, or map to `bool` themselves.
+pub fn getWindowAttrib(window: *Window, attrib: c_int) c_int {
+    return c.glfwGetWindowAttrib(window, attrib);
+}
+
+/// Set a mutable window attribute.
+///
+/// Thin wrapper over `glfwSetWindowAttrib`. Not all attributes are mutable;
+/// see the GLFW docs for which ones are supported. Typical usage:
+///
+///   glfw.setWindowAttrib(window, glfw.c.GLFW_RESIZABLE, glfw.c.GLFW_FALSE);
+pub fn setWindowAttrib(window: *Window, attrib: c_int, value: c_int) void {
+    c.glfwSetWindowAttrib(window, attrib, value);
+}
+
 /// Swap buffers for a window's current context (typical render loop call).
 pub fn swapBuffers(window: *Window) void {
     c.glfwSwapBuffers(window);
@@ -350,6 +400,62 @@ pub fn getMonitorName(monitor: *Monitor) ?[:0]const u8 {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Vulkan helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Returns whether GLFW reports Vulkan support on this platform.
+///
+/// This is a thin wrapper over `glfwVulkanSupported` and can be called
+/// before `glfw.init()`.
+pub fn vulkanSupported() bool {
+    const result = c.glfwVulkanSupported();
+    return result == c.GLFW_TRUE;
+}
+
+/// Returns the list of required Vulkan instance extensions.
+///
+/// This is a thin wrapper over `glfwGetRequiredInstanceExtensions`.
+///
+/// - On success, returns a slice of sentinel-terminated UTF-8 names.
+/// - The slice itself is allocated with `allocator` and must be freed by
+///   the caller using the same allocator.
+/// - The strings **borrow** storage from GLFW and remain valid until
+///   `glfw.terminate()` is called.
+/// - Returns `null` if Vulkan is not supported or GLFW reports none.
+pub fn getRequiredInstanceExtensions(
+    allocator: std.mem.Allocator,
+) !?[][:0]const u8 {
+    var count: u32 = 0;
+    const raw = c.glfwGetRequiredInstanceExtensions(&count);
+
+    if (count == 0) {
+        // Either Vulkan is not supported or no extensions are required.
+        return null;
+    }
+
+    const addr = @intFromPtr(raw);
+    if (addr == 0) {
+        return null;
+    }
+
+    const len: usize = @intCast(count);
+
+    // `raw` is effectively `const char**`. We reinterpret the address as
+    // a pointer to an array of sentinel-terminated C strings.
+    const base: [*][*:0]const u8 = @ptrFromInt(addr);
+    const src = base[0..len];
+
+    // Allocate the outer slice; each element is a sentinel-terminated slice
+    // borrowing GLFW-managed storage.
+    const out = try allocator.alloc([:0]const u8, len);
+    for (src, 0..) |p, i| {
+        out[i] = std.mem.span(p);
+    }
+
+    return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Inline tests (unit + light conformance)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -445,5 +551,63 @@ test "monitor helpers best-effort" {
             try std.testing.expect(mode.width > 0);
             try std.testing.expect(mode.height > 0);
         }
+    }
+}
+
+test "window hints + attributes best-effort" {
+    // Headless/CI environments may not have a usable display; treat both init
+    // and window creation as best-effort.
+    _ = init() catch return;
+    defer terminate();
+
+    // Start from clean defaults.
+    defaultWindowHints();
+
+    // Make window non-resizable via hint, then verify via attribute.
+    windowHint(c.GLFW_RESIZABLE, c.GLFW_FALSE);
+
+    const title = "hint test\x00";
+    const window = createWindow(640, 480, title, null, null) catch return;
+    defer destroyWindow(window);
+
+    // Attribute should reflect the hint when the platform supports it.
+    const resizable = getWindowAttrib(window, c.GLFW_RESIZABLE);
+    if (resizable == c.GLFW_TRUE or resizable == c.GLFW_FALSE) {
+        try std.testing.expectEqual(c.GLFW_FALSE, resizable);
+
+        // Flip it back on using setWindowAttrib, and re-check.
+        setWindowAttrib(window, c.GLFW_RESIZABLE, c.GLFW_TRUE);
+        const resizable2 = getWindowAttrib(window, c.GLFW_RESIZABLE);
+        try std.testing.expectEqual(c.GLFW_TRUE, resizable2);
+    }
+}
+
+test "Vulkan helpers basic behavior" {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+
+    const supported = vulkanSupported();
+
+    const exts_opt = getRequiredInstanceExtensions(allocator) catch return;
+    defer {
+        if (exts_opt) |exts| allocator.free(exts);
+    }
+
+    if (!supported) {
+        // If Vulkan is not supported, GLFW is allowed to return null or an
+        // empty list. We only assert that we don't crash.
+        if (exts_opt) |exts| {
+            try std.testing.expect(exts.len == 0);
+        }
+        return;
+    }
+
+    const exts = exts_opt orelse return; // strange but possible; treat as skip
+    try std.testing.expect(exts.len > 0);
+
+    // Basic sanity: all returned names should be non-empty.
+    for (exts) |name| {
+        try std.testing.expect(name.len > 0);
     }
 }
