@@ -163,9 +163,63 @@ pub fn setCursorPos(window: *Window, x: f64, y: f64) void {
     c.glfwSetCursorPos(window, x, y);
 }
 
+/// Returns the GLFW time in seconds as an f64.
+/// This does **not** require glfw.init() to succeed.
+pub fn getTime() f64 {
+    return c.glfwGetTime();
+}
+
+/// Sets the GLFW time in seconds.
+/// Useful in tests or for resetting your own timers.
+pub fn setTime(seconds: f64) void {
+    c.glfwSetTime(seconds);
+}
+
+/// Returns the raw timer value as a monotonically increasing counter.
+/// This does **not** require glfw.init() to succeed.
+pub fn getTimerValue() u64 {
+    return c.glfwGetTimerValue();
+}
+
+/// Returns the raw timer frequency (ticks per second).
+/// Guaranteed by GLFW to be non-zero on supported platforms.
+pub fn getTimerFrequency() u64 {
+    return c.glfwGetTimerFrequency();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline tests (unit + light conformance)
 // ─────────────────────────────────────────────────────────────────────────────
+
+test "time API basic sanity" {
+    // Allowed before glfw.init(), so we don't depend on init here.
+
+    const t0 = getTime();
+    const t1 = getTime();
+
+    // Time should be monotonic non-decreasing (within reason).
+    try std.testing.expect(t1 >= t0);
+
+    const freq = getTimerFrequency();
+    // Some platforms/builds may report 0 for "no high-res timer".
+    // The only hard guarantee we enforce here is "the call doesn't crash".
+    if (freq != 0) {
+        // If there *is* a frequency, we can at least check that timer values
+        // are monotonic (no requirement on step size).
+        const v0 = getTimerValue();
+        const v1 = getTimerValue();
+        try std.testing.expect(v1 >= v0);
+    } else {
+        // Still exercise the call in the "no frequency" case.
+        const v = getTimerValue();
+        _ = v;
+    }
+
+    // setTime shouldn't crash; we just round-trip the current value.
+    setTime(t1);
+    const t2 = getTime();
+    try std.testing.expect(t2 >= 0.0);
+}
 
 test "version API basic sanity" {
     var major: i32 = 0;
