@@ -153,7 +153,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // Dependency on glfw-zig
-    const glfw-zig_dep = b.dependency("glfw-zig", .{
+    const glfw-zig_dep = b.dependency("glfw_zig", .{
         .target = target,
         .optimize = optimize,
     });
