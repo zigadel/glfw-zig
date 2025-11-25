@@ -1,0 +1,43 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+zig-cache
+.zig-cache
+deps.zig
+gyro.lock
+
+zig-out
+
+ideal-project-directory-structure.txt
+glfw-zig-project_dump.txt
+project_dump.txt

@@ -1,0 +1,25 @@
+.{
+    .name = .zglfw,
+
+    .version = "0.1.0",
+
+    .fingerprint = 0x6fbada335d590806,
+
+    .minimum_zig_version = "0.15.1",
+
+    .dependencies = .{
+        .@"glfw-c" = .{
+            // Official GLFW 3.4 source tarball
+            .url = "https://github.com/glfw/glfw/archive/refs/tags/3.4.tar.gz",
+            .hash = "N-V-__8AAL40TADEbrysYHBl-UIZO4KiG4chP8pLDVDINGH4",
+        },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "LICENSE",
+        "README.md",
+    },
+}
