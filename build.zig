@@ -162,6 +162,13 @@ pub fn build(b: *std.Build) void {
     });
     vulkan_mod.addImport("c_bindings", c_bindings_mod);
 
+    const joystick_mod = b.createModule(.{
+        .root_source_file = b.path("src/glfw/joystick.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    joystick_mod.addImport("c_bindings", c_bindings_mod);
+
     // 3) Public façade module (what users import as @import("glfw")).
     const glfw_mod = b.createModule(.{
         .root_source_file = b.path("src/glfw.zig"),
@@ -175,6 +182,7 @@ pub fn build(b: *std.Build) void {
     glfw_mod.addImport("monitor", monitor_mod);
     glfw_mod.addImport("vulkan", vulkan_mod);
     glfw_mod.addImport("context", context_mod);
+    glfw_mod.addImport("joystick", joystick_mod);
 
     // 4) Library artifact for the Zig wrapper: libglfw-zig.
     const lib = b.addLibrary(.{

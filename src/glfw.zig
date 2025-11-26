@@ -3,6 +3,7 @@ const core = @import("core");
 const window = @import("window");
 const monitor = @import("monitor");
 const vulkan = @import("vulkan");
+const joystick = @import("joystick");
 
 pub const c = c_bindings.c;
 
@@ -142,9 +143,6 @@ pub const setMonitorUserPointer = monitor.setMonitorUserPointer;
 pub const getMonitorUserPointer = monitor.getMonitorUserPointer;
 pub const setGamma = monitor.setGamma;
 
-// (If monitor.zig exposes more helpers like getMonitorPos / getMonitorContentScale,
-// you can re-export them here in the same style.)
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Vulkan helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -222,3 +220,31 @@ pub const getWindowOpacity = window.getWindowOpacity;
 pub const setWindowOpacity = window.setWindowOpacity;
 pub const setWindowUserPointer = window.setWindowUserPointer;
 pub const getWindowUserPointer = window.getWindowUserPointer;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Joystick / gamepad API
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub const JoystickId = joystick.JoystickId;
+pub const MaxGamepadAxes = joystick.MaxGamepadAxes;
+pub const MaxGamepadButtons = joystick.MaxGamepadButtons;
+pub const GamepadState = joystick.GamepadState;
+pub const JoystickCallback = joystick.JoystickCallback;
+
+pub const joystickPresent = joystick.joystickPresent;
+pub const getJoystickName = joystick.getJoystickName;
+pub const getJoystickGUID = joystick.getJoystickGUID;
+
+pub const getJoystickAxes = joystick.getJoystickAxes;
+pub const getJoystickButtons = joystick.getJoystickButtons;
+pub const getJoystickHats = joystick.getJoystickHats;
+
+pub const setJoystickUserPointer = joystick.setJoystickUserPointer;
+pub const getJoystickUserPointer = joystick.getJoystickUserPointer;
+
+pub const joystickIsGamepad = joystick.joystickIsGamepad;
+pub const getGamepadName = joystick.getGamepadName;
+pub const getGamepadState = joystick.getGamepadState;
+pub const updateGamepadMappings = joystick.updateGamepadMappings;
+
+pub const setJoystickCallback = joystick.setJoystickCallback;

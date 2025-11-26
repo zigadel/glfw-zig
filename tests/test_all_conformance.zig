@@ -16,4 +16,6 @@ test "conformance suite" {
     _ = @import("conformance/event_wait.zig");
     _ = @import("conformance/window_geometry.zig");
     _ = @import("conformance/window_state.zig");
+    _ = @import("conformance/clipboard.zig");
+    _ = @import("conformance/joystick.zig");
 }
