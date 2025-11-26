@@ -5,35 +5,6 @@ const GlfwCBuild = struct {
     include_dir: std.Build.LazyPath,
 };
 
-fn addCommonSources(
-    glfw_c: *std.Build.Step.Compile,
-    glfw_dep: *std.Build.Dependency,
-    flags: []const []const u8,
-) void {
-    const common_rel = [_][]const u8{
-        "src/context.c",
-        "src/init.c",
-        "src/input.c",
-        "src/monitor.c",
-        "src/platform.c",
-        "src/vulkan.c",
-        "src/window.c",
-        "src/egl_context.c",
-        "src/osmesa_context.c",
-        "src/null_init.c",
-        "src/null_monitor.c",
-        "src/null_window.c",
-        "src/null_joystick.c",
-    };
-
-    for (common_rel) |rel| {
-        glfw_c.addCSourceFile(.{
-            .file = glfw_dep.path(rel),
-            .flags = flags,
-        });
-    }
-}
-
 fn buildGlfwCLib(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
@@ -63,7 +34,27 @@ fn buildGlfwCLib(
     glfw_c.addIncludePath(include_dir);
     glfw_c.addIncludePath(glfw_dep.path("src"));
 
+    // Common GLFW C sources (shared across all backends).
+    const common_rel = [_][]const u8{
+        "src/context.c",
+        "src/init.c",
+        "src/input.c",
+        "src/monitor.c",
+        "src/platform.c",
+        "src/vulkan.c",
+        "src/window.c",
+        "src/egl_context.c",
+        "src/osmesa_context.c",
+        "src/null_init.c",
+        "src/null_monitor.c",
+        "src/null_window.c",
+        "src/null_joystick.c",
+    };
+
     switch (os_tag) {
+        // ─────────────────────────────────────────────────────────────────────
+        // Windows (Win32 backend)
+        // ─────────────────────────────────────────────────────────────────────
         .windows => {
             const win_flags = &[_][]const u8{
                 "-D_GLFW_WIN32",
@@ -71,8 +62,15 @@ fn buildGlfwCLib(
                 "-D_UNICODE",
             };
 
-            addCommonSources(glfw_c, glfw_dep, win_flags);
+            // Common sources compiled as Win32 backend.
+            for (common_rel) |rel| {
+                glfw_c.addCSourceFile(.{
+                    .file = glfw_dep.path(rel),
+                    .flags = win_flags,
+                });
+            }
 
+            // Windows-specific sources.
             const win_rel = [_][]const u8{
                 "src/win32_init.c",
                 "src/win32_joystick.c",
@@ -98,63 +96,29 @@ fn buildGlfwCLib(
             glfw_c.linkSystemLibrary("advapi32");
             glfw_c.linkSystemLibrary("winmm");
         },
-        .linux => {
-            // X11 backend (works via XWayland on Wayland setups).
-            const linux_flags = &[_][]const u8{
-                "-D_GLFW_X11",
-            };
 
-            addCommonSources(glfw_c, glfw_dep, linux_flags);
-
-            const linux_rel = [_][]const u8{
-                "src/x11_init.c",
-                "src/x11_monitor.c",
-                "src/x11_window.c",
-                "src/xkb_unicode.c",
-                "src/glx_context.c",
-                "src/posix_time.c",
-                "src/posix_thread.c",
-                "src/posix_module.c",
-                "src/posix_poll.c",
-                "src/linux_joystick.c",
-            };
-
-            for (linux_rel) |rel| {
-                glfw_c.addCSourceFile(.{
-                    .file = glfw_dep.path(rel),
-                    .flags = linux_flags,
-                });
-            }
-
-            glfw_c.linkLibC();
-
-            const linux_libs = [_][]const u8{
-                "X11",
-                "Xrandr",
-                "Xinerama",
-                "Xcursor",
-                "Xi",
-                "Xxf86vm",
-                "dl",
-                "pthread",
-                "m",
-            };
-            for (linux_libs) |name| {
-                glfw_c.linkSystemLibrary(name);
-            }
-        },
+        // ─────────────────────────────────────────────────────────────────────
+        // macOS (Cocoa backend)
+        // ─────────────────────────────────────────────────────────────────────
         .macos => {
             const cocoa_flags = &[_][]const u8{
                 "-D_GLFW_COCOA",
             };
 
-            addCommonSources(glfw_c, glfw_dep, cocoa_flags);
+            // Common sources compiled as Cocoa backend.
+            for (common_rel) |rel| {
+                glfw_c.addCSourceFile(.{
+                    .file = glfw_dep.path(rel),
+                    .flags = cocoa_flags,
+                });
+            }
 
+            // Cocoa-specific sources. Note: .m files are Obj-C.
             const cocoa_rel = [_][]const u8{
                 "src/cocoa_init.m",
+                "src/cocoa_joystick.m",
                 "src/cocoa_monitor.m",
                 "src/cocoa_window.m",
-                "src/cocoa_joystick.m",
                 "src/cocoa_time.c",
                 "src/nsgl_context.m",
                 "src/posix_thread.c",
@@ -174,8 +138,63 @@ fn buildGlfwCLib(
             glfw_c.linkFramework("CoreFoundation");
             glfw_c.linkFramework("CoreVideo");
         },
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Linux (X11 backend)
+        // ─────────────────────────────────────────────────────────────────────
+        .linux => {
+            const x11_flags = &[_][]const u8{
+                "-D_GLFW_X11",
+            };
+
+            // Common sources compiled as X11 backend.
+            for (common_rel) |rel| {
+                glfw_c.addCSourceFile(.{
+                    .file = glfw_dep.path(rel),
+                    .flags = x11_flags,
+                });
+            }
+
+            // X11 / POSIX platform sources.
+            const x11_rel = [_][]const u8{
+                "src/x11_init.c",
+                "src/x11_monitor.c",
+                "src/x11_window.c",
+                "src/xkb_unicode.c",
+                "src/linux_joystick.c",
+                "src/posix_time.c",
+                "src/posix_thread.c",
+                "src/posix_module.c",
+                "src/posix_tls.c",
+                "src/glx_context.c",
+            };
+
+            for (x11_rel) |rel| {
+                glfw_c.addCSourceFile(.{
+                    .file = glfw_dep.path(rel),
+                    .flags = x11_flags,
+                });
+            }
+
+            glfw_c.linkLibC();
+            // Core X11 + extensions used by GLFW.
+            glfw_c.linkSystemLibrary("X11");
+            glfw_c.linkSystemLibrary("Xi");
+            glfw_c.linkSystemLibrary("Xrandr");
+            glfw_c.linkSystemLibrary("Xinerama");
+            glfw_c.linkSystemLibrary("Xcursor");
+            glfw_c.linkSystemLibrary("Xxf86vm");
+            // POSIX deps.
+            glfw_c.linkSystemLibrary("pthread");
+            glfw_c.linkSystemLibrary("dl");
+            glfw_c.linkSystemLibrary("m");
+        },
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Others: not yet wired
+        // ─────────────────────────────────────────────────────────────────────
         else => {
-            @panic("glfw-zig: unsupported target OS for GLFW C backend (extend buildGlfwCLib as needed).");
+            @panic("glfw-zig: buildGlfwCLib is wired for Windows, macOS, and Linux only for now.");
         },
     }
 
@@ -235,19 +254,22 @@ pub fn build(b: *std.Build) void {
     monitor_mod.addImport("c_bindings", c_bindings_mod);
     monitor_mod.addImport("core", core_mod);
 
-    const joystick_mod = b.createModule(.{
-        .root_source_file = b.path("src/glfw/joystick.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    joystick_mod.addImport("c_bindings", c_bindings_mod);
-
     const vulkan_mod = b.createModule(.{
         .root_source_file = b.path("src/glfw/vulkan.zig"),
         .target = target,
         .optimize = optimize,
     });
     vulkan_mod.addImport("c_bindings", c_bindings_mod);
+    vulkan_mod.addImport("core", core_mod);
+    vulkan_mod.addImport("window", window_mod);
+
+    const joystick_mod = b.createModule(.{
+        .root_source_file = b.path("src/glfw/joystick.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    joystick_mod.addImport("c_bindings", c_bindings_mod);
+    joystick_mod.addImport("core", core_mod);
 
     // 3) Public façade module (what users import as @import("glfw")).
     const glfw_mod = b.createModule(.{
