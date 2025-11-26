@@ -174,6 +174,19 @@ pub fn getTimerFrequency() u64 {
     return c.glfwGetTimerFrequency();
 }
 
+pub fn initHint(hint: c_int, value: c_int) void {
+    // Thin wrapper over glfwInitHint.
+    // Safe to call before glfw.init().
+    c.glfwInitHint(hint, value);
+}
+
+/// Returns whether raw mouse motion is supported on this platform.
+///
+/// Safe to call before or after glfw.init().
+pub fn rawMouseMotionSupported() bool {
+    return c.glfwRawMouseMotionSupported() == c.GLFW_TRUE;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline tests (core)
 // ─────────────────────────────────────────────────────────────────────────────

@@ -18,4 +18,5 @@ test "conformance suite" {
     _ = @import("conformance/window_state.zig");
     _ = @import("conformance/clipboard.zig");
     _ = @import("conformance/joystick.zig");
+    _ = @import("conformance/api_surface.zig");
 }

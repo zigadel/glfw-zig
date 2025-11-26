@@ -36,6 +36,9 @@ pub const errorCodeFromC = core.errorCodeFromC;
 pub const init = core.init;
 pub const terminate = core.terminate;
 
+pub const initHint = core.initHint;
+pub const rawMouseMotionSupported = core.rawMouseMotionSupported;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Version API
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,6 +86,9 @@ pub const waitEventsTimeout = window.waitEventsTimeout;
 pub const postEmptyEvent = window.postEmptyEvent;
 pub const swapInterval = window.swapInterval;
 pub const swapBuffers = window.swapBuffers;
+pub const getMouseButton = window.getMouseButton;
+pub const getKeyName = window.getKeyName;
+pub const getKeyScancode = window.getKeyScancode;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Window hints & attributes

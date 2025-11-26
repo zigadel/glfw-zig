@@ -436,6 +436,27 @@ pub fn getWin32Window(window: *Window) ?*anyopaque {
 // Redeclare symbol instead of pulling in glfw3native.h + Win32 headers.
 extern fn glfwGetWin32Window(window: ?*c.GLFWwindow) ?*anyopaque;
 
+/// Get mouse button state for the given button on this window.
+///
+/// Returns one of GLFW_PRESS, GLFW_RELEASE, or GLFW_REPEAT (or 0 if unavailable).
+pub fn getMouseButton(window: *Window, button: c_int) c_int {
+    return c.glfwGetMouseButton(window, button);
+}
+
+/// Get human-readable key name for a key/scancode pair, if available.
+///
+/// Returns null if the key has no printable name on this keyboard layout.
+pub fn getKeyName(key: c_int, scancode: c_int) ?[:0]const u8 {
+    const ptr = c.glfwGetKeyName(key, scancode);
+    if (ptr == null) return null;
+    return std.mem.span(ptr);
+}
+
+/// Get the platform-specific scancode for a given key.
+pub fn getKeyScancode(key: c_int) c_int {
+    return c.glfwGetKeyScancode(key);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline tests (window-level)
 // ─────────────────────────────────────────────────────────────────────────────
