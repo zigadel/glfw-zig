@@ -105,3 +105,41 @@ pub const getRequiredInstanceExtensions = vulkan.getRequiredInstanceExtensions;
 
 // Native platform handle(s)
 pub const getWin32Window = c_bindings.getWin32Window;
+
+// Types
+pub const WindowPos = window.WindowPos;
+pub const WindowSize = window.WindowSize;
+pub const FramebufferSize = window.FramebufferSize;
+pub const FrameSize = window.FrameSize;
+pub const ContentScale = window.ContentScale;
+
+// Geometry
+pub const getWindowPos = window.getWindowPos;
+pub const setWindowPos = window.setWindowPos;
+pub const getWindowSize = window.getWindowSize;
+pub const setWindowSize = window.setWindowSize;
+pub const setWindowSizeLimits = window.setWindowSizeLimits;
+pub const setWindowAspectRatio = window.setWindowAspectRatio;
+pub const getFramebufferSize = window.getFramebufferSize;
+pub const getWindowFrameSize = window.getWindowFrameSize;
+pub const getWindowContentScale = window.getWindowContentScale;
+
+// State / visibility
+pub const showWindow = window.showWindow;
+pub const hideWindow = window.hideWindow;
+pub const iconifyWindow = window.iconifyWindow;
+pub const restoreWindow = window.restoreWindow;
+pub const maximizeWindow = window.maximizeWindow;
+pub const focusWindow = window.focusWindow;
+pub const requestWindowAttention = window.requestWindowAttention;
+pub const setWindowTitle = window.setWindowTitle;
+
+// Monitor binding
+pub const getWindowMonitor = window.getWindowMonitor;
+pub const setWindowMonitor = window.setWindowMonitor;
+
+// Opacity & user pointer
+pub const getWindowOpacity = window.getWindowOpacity;
+pub const setWindowOpacity = window.setWindowOpacity;
+pub const setWindowUserPointer = window.setWindowUserPointer;
+pub const getWindowUserPointer = window.getWindowUserPointer;

@@ -11,6 +11,38 @@ pub const Monitor = c_bindings.Monitor;
 
 pub const GlfwError = core.GlfwError;
 
+/// Logical window position in screen coordinates (pixels).
+pub const WindowPos = struct {
+    x: i32,
+    y: i32,
+};
+
+/// Logical window size in screen coordinates (pixels).
+pub const WindowSize = struct {
+    width: i32,
+    height: i32,
+};
+
+/// Size of the framebuffer in pixels (often different from WindowSize on HiDPI).
+pub const FramebufferSize = struct {
+    width: i32,
+    height: i32,
+};
+
+/// Frame size in screen coordinates: distance from window edges to content area.
+pub const FrameSize = struct {
+    left: i32,
+    top: i32,
+    right: i32,
+    bottom: i32,
+};
+
+/// Content scale factors on X/Y axes (for HiDPI handling).
+pub const ContentScale = struct {
+    x: f32,
+    y: f32,
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Window API
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +107,108 @@ pub fn swapInterval(interval: c_int) void {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Window geometry
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub fn getWindowPos(window: *core.Window) WindowPos {
+    var x: c_int = 0;
+    var y: c_int = 0;
+    c.glfwGetWindowPos(window, &x, &y);
+    return .{
+        .x = @intCast(x),
+        .y = @intCast(y),
+    };
+}
+
+pub fn setWindowPos(window: *core.Window, x: i32, y: i32) void {
+    c.glfwSetWindowPos(window, @intCast(x), @intCast(y));
+}
+
+pub fn getWindowSize(window: *core.Window) WindowSize {
+    var w: c_int = 0;
+    var h: c_int = 0;
+    c.glfwGetWindowSize(window, &w, &h);
+    return .{
+        .width = @intCast(w),
+        .height = @intCast(h),
+    };
+}
+
+pub fn setWindowSize(window: *core.Window, width: i32, height: i32) void {
+    c.glfwSetWindowSize(window, @intCast(width), @intCast(height));
+}
+
+/// Set hard size limits for the window.
+///
+/// Use `glfw.c.GLFW_DONT_CARE` for any dimension you don't want to constrain.
+/// Example:
+///   glfw.setWindowSizeLimits(win,
+///       640, 480,
+///       glfw.c.GLFW_DONT_CARE, glfw.c.GLFW_DONT_CARE);
+pub fn setWindowSizeLimits(
+    window: *core.Window,
+    min_width: i32,
+    min_height: i32,
+    max_width: i32,
+    max_height: i32,
+) void {
+    c.glfwSetWindowSizeLimits(
+        window,
+        @intCast(min_width),
+        @intCast(min_height),
+        @intCast(max_width),
+        @intCast(max_height),
+    );
+}
+
+/// Constrain window to maintain a given aspect ratio (numerator / denominator).
+///
+/// Use `0, 0` to clear any previously set ratio (GLFW_DONT_CARE semantics).
+pub fn setWindowAspectRatio(
+    window: *core.Window,
+    numer: i32,
+    denom: i32,
+) void {
+    c.glfwSetWindowAspectRatio(window, @intCast(numer), @intCast(denom));
+}
+
+pub fn getFramebufferSize(window: *core.Window) FramebufferSize {
+    var w: c_int = 0;
+    var h: c_int = 0;
+    c.glfwGetFramebufferSize(window, &w, &h);
+    return .{
+        .width = @intCast(w),
+        .height = @intCast(h),
+    };
+}
+
+pub fn getWindowFrameSize(window: *core.Window) FrameSize {
+    var left: c_int = 0;
+    var top: c_int = 0;
+    var right: c_int = 0;
+    var bottom: c_int = 0;
+
+    c.glfwGetWindowFrameSize(window, &left, &top, &right, &bottom);
+
+    return .{
+        .left = @intCast(left),
+        .top = @intCast(top),
+        .right = @intCast(right),
+        .bottom = @intCast(bottom),
+    };
+}
+
+pub fn getWindowContentScale(window: *core.Window) ContentScale {
+    var xs: f32 = 0;
+    var ys: f32 = 0;
+    c.glfwGetWindowContentScale(window, &xs, &ys);
+    return .{
+        .x = xs,
+        .y = ys,
+    };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Window hints & attributes
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -101,6 +235,101 @@ pub fn getWindowAttrib(window: *Window, attrib: c_int) c_int {
 /// Set a mutable window attribute.
 pub fn setWindowAttrib(window: *Window, attrib: c_int, value: c_int) void {
     c.glfwSetWindowAttrib(window, attrib, value);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Window state & visibility
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub fn showWindow(window: *core.Window) void {
+    c.glfwShowWindow(window);
+}
+
+pub fn hideWindow(window: *core.Window) void {
+    c.glfwHideWindow(window);
+}
+
+pub fn iconifyWindow(window: *core.Window) void {
+    c.glfwIconifyWindow(window);
+}
+
+pub fn restoreWindow(window: *core.Window) void {
+    c.glfwRestoreWindow(window);
+}
+
+pub fn maximizeWindow(window: *core.Window) void {
+    c.glfwMaximizeWindow(window);
+}
+
+pub fn focusWindow(window: *core.Window) void {
+    c.glfwFocusWindow(window);
+}
+
+/// Request user attention (often flashes taskbar/dock).
+pub fn requestWindowAttention(window: *core.Window) void {
+    c.glfwRequestWindowAttention(window);
+}
+
+/// Change the window title. `title` must be UTF-8 + NUL-terminated.
+pub fn setWindowTitle(window: *core.Window, title: [:0]const u8) void {
+    c.glfwSetWindowTitle(window, title.ptr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Monitor binding & fullscreen
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub fn getWindowMonitor(window: *core.Window) ?*core.Monitor {
+    return c.glfwGetWindowMonitor(window);
+}
+
+/// Reconfigure window to use the given monitor (fullscreen or windowed).
+///
+/// - monitor = null: makes the window windowed.
+/// - refresh_rate: use `glfw.c.GLFW_DONT_CARE` to let GLFW pick.
+pub fn setWindowMonitor(
+    window: *core.Window,
+    monitor: ?*core.Monitor,
+    xpos: i32,
+    ypos: i32,
+    width: i32,
+    height: i32,
+    refresh_rate: i32,
+) void {
+    c.glfwSetWindowMonitor(
+        window,
+        monitor,
+        @intCast(xpos),
+        @intCast(ypos),
+        @intCast(width),
+        @intCast(height),
+        @intCast(refresh_rate),
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Opacity & user pointer
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Window opacity in [0, 1]. May be unsupported on some platforms.
+pub fn getWindowOpacity(window: *core.Window) f32 {
+    return c.glfwGetWindowOpacity(window);
+}
+
+pub fn setWindowOpacity(window: *core.Window, opacity: f32) void {
+    c.glfwSetWindowOpacity(window, opacity);
+}
+
+/// Attach an arbitrary user pointer to a window.
+///
+/// Typical pattern is to store a *opaque app struct here and recover it in
+/// callbacks via `getWindowUserPointer`.
+pub fn setWindowUserPointer(window: *core.Window, ptr: ?*anyopaque) void {
+    c.glfwSetWindowUserPointer(window, ptr);
+}
+
+pub fn getWindowUserPointer(window: *core.Window) ?*anyopaque {
+    return c.glfwGetWindowUserPointer(window);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

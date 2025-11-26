@@ -1,6 +1,6 @@
 # glfw-zig — Zig Wrapper for GLFW 3.4
 
-`glfw-zig` is a **thin, idiomatic Zig wrapper** around the C GLFW library (3.4).  
+`glfw-zig` is an **Zig wrapper** around the C GLFW library (3.4).  
 It keeps the **full power of GLFW** while giving you:
 
 - Zig-style types and error sets
@@ -67,7 +67,6 @@ Planned next slices (not implemented yet):
 - Joystick / gamepad helpers
 - Callback registration
 - Vulkan helper functions (extensions, surface creation) suitable for use with `vulkan-zig`
-- 
 
 ## Requirements
 
