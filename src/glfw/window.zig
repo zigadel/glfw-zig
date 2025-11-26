@@ -44,7 +44,7 @@ pub const ContentScale = struct {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Window API
+// Window creation & lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub fn createWindow(
@@ -80,12 +80,16 @@ pub fn setWindowShouldClose(window: *Window, value: bool) void {
     c.glfwSetWindowShouldClose(window, if (value) c.GLFW_TRUE else c.GLFW_FALSE);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Event loop, key state, vsync
+// ─────────────────────────────────────────────────────────────────────────────
+
 /// Get key state for a given key. Returns a GLFW action (`Press`, `Release`, etc.).
 pub fn getKey(window: *Window, key: c_int) c_int {
     return c.glfwGetKey(window, key);
 }
 
-/// Pump the event queue.
+/// Pump the event queue (non-blocking).
 pub fn pollEvents() void {
     c.glfwPollEvents();
 }
@@ -106,11 +110,16 @@ pub fn swapInterval(interval: c_int) void {
     c.glfwSwapInterval(interval);
 }
 
+/// Swap front and back buffers for the given window (OpenGL/OSMesa).
+pub fn swapBuffers(window: *Window) void {
+    c.glfwSwapBuffers(window);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Window geometry
 // ─────────────────────────────────────────────────────────────────────────────
 
-pub fn getWindowPos(window: *core.Window) WindowPos {
+pub fn getWindowPos(window: *Window) WindowPos {
     var x: c_int = 0;
     var y: c_int = 0;
     c.glfwGetWindowPos(window, &x, &y);
@@ -120,11 +129,11 @@ pub fn getWindowPos(window: *core.Window) WindowPos {
     };
 }
 
-pub fn setWindowPos(window: *core.Window, x: i32, y: i32) void {
+pub fn setWindowPos(window: *Window, x: i32, y: i32) void {
     c.glfwSetWindowPos(window, @intCast(x), @intCast(y));
 }
 
-pub fn getWindowSize(window: *core.Window) WindowSize {
+pub fn getWindowSize(window: *Window) WindowSize {
     var w: c_int = 0;
     var h: c_int = 0;
     c.glfwGetWindowSize(window, &w, &h);
@@ -134,19 +143,15 @@ pub fn getWindowSize(window: *core.Window) WindowSize {
     };
 }
 
-pub fn setWindowSize(window: *core.Window, width: i32, height: i32) void {
+pub fn setWindowSize(window: *Window, width: i32, height: i32) void {
     c.glfwSetWindowSize(window, @intCast(width), @intCast(height));
 }
 
 /// Set hard size limits for the window.
 ///
 /// Use `glfw.c.GLFW_DONT_CARE` for any dimension you don't want to constrain.
-/// Example:
-///   glfw.setWindowSizeLimits(win,
-///       640, 480,
-///       glfw.c.GLFW_DONT_CARE, glfw.c.GLFW_DONT_CARE);
 pub fn setWindowSizeLimits(
-    window: *core.Window,
+    window: *Window,
     min_width: i32,
     min_height: i32,
     max_width: i32,
@@ -165,14 +170,14 @@ pub fn setWindowSizeLimits(
 ///
 /// Use `0, 0` to clear any previously set ratio (GLFW_DONT_CARE semantics).
 pub fn setWindowAspectRatio(
-    window: *core.Window,
+    window: *Window,
     numer: i32,
     denom: i32,
 ) void {
     c.glfwSetWindowAspectRatio(window, @intCast(numer), @intCast(denom));
 }
 
-pub fn getFramebufferSize(window: *core.Window) FramebufferSize {
+pub fn getFramebufferSize(window: *Window) FramebufferSize {
     var w: c_int = 0;
     var h: c_int = 0;
     c.glfwGetFramebufferSize(window, &w, &h);
@@ -182,7 +187,7 @@ pub fn getFramebufferSize(window: *core.Window) FramebufferSize {
     };
 }
 
-pub fn getWindowFrameSize(window: *core.Window) FrameSize {
+pub fn getWindowFrameSize(window: *Window) FrameSize {
     var left: c_int = 0;
     var top: c_int = 0;
     var right: c_int = 0;
@@ -198,7 +203,7 @@ pub fn getWindowFrameSize(window: *core.Window) FrameSize {
     };
 }
 
-pub fn getWindowContentScale(window: *core.Window) ContentScale {
+pub fn getWindowContentScale(window: *Window) ContentScale {
     var xs: f32 = 0;
     var ys: f32 = 0;
     c.glfwGetWindowContentScale(window, &xs, &ys);
@@ -241,45 +246,70 @@ pub fn setWindowAttrib(window: *Window, attrib: c_int, value: c_int) void {
 // Window state & visibility
 // ─────────────────────────────────────────────────────────────────────────────
 
-pub fn showWindow(window: *core.Window) void {
+pub fn showWindow(window: *Window) void {
     c.glfwShowWindow(window);
 }
 
-pub fn hideWindow(window: *core.Window) void {
+pub fn hideWindow(window: *Window) void {
     c.glfwHideWindow(window);
 }
 
-pub fn iconifyWindow(window: *core.Window) void {
+pub fn iconifyWindow(window: *Window) void {
     c.glfwIconifyWindow(window);
 }
 
-pub fn restoreWindow(window: *core.Window) void {
+pub fn restoreWindow(window: *Window) void {
     c.glfwRestoreWindow(window);
 }
 
-pub fn maximizeWindow(window: *core.Window) void {
+pub fn maximizeWindow(window: *Window) void {
     c.glfwMaximizeWindow(window);
 }
 
-pub fn focusWindow(window: *core.Window) void {
+pub fn focusWindow(window: *Window) void {
     c.glfwFocusWindow(window);
 }
 
 /// Request user attention (often flashes taskbar/dock).
-pub fn requestWindowAttention(window: *core.Window) void {
+pub fn requestWindowAttention(window: *Window) void {
     c.glfwRequestWindowAttention(window);
 }
 
 /// Change the window title. `title` must be UTF-8 + NUL-terminated.
-pub fn setWindowTitle(window: *core.Window, title: [:0]const u8) void {
+pub fn setWindowTitle(window: *Window, title: [:0]const u8) void {
     c.glfwSetWindowTitle(window, title.ptr);
+}
+
+/// Returns true if GLFW considers the window visible (shown on screen).
+pub fn isVisible(window: *Window) bool {
+    return c.glfwGetWindowAttrib(window, c.GLFW_VISIBLE) == c.GLFW_TRUE;
+}
+
+/// Returns true if the window is minimized/iconified.
+pub fn isIconified(window: *Window) bool {
+    return c.glfwGetWindowAttrib(window, c.GLFW_ICONIFIED) == c.GLFW_TRUE;
+}
+
+/// Returns true if the window is maximized.
+pub fn isMaximized(window: *Window) bool {
+    return c.glfwGetWindowAttrib(window, c.GLFW_MAXIMIZED) == c.GLFW_TRUE;
+}
+
+/// Returns true if the window has input focus.
+pub fn isFocused(window: *Window) bool {
+    return c.glfwGetWindowAttrib(window, c.GLFW_FOCUSED) == c.GLFW_TRUE;
+}
+
+/// Returns true if the cursor is hovering over the content area of the window.
+pub fn isHovered(window: *Window) bool {
+    return c.glfwGetWindowAttrib(window, c.GLFW_HOVERED) == c.GLFW_TRUE;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Monitor binding & fullscreen
 // ─────────────────────────────────────────────────────────────────────────────
 
-pub fn getWindowMonitor(window: *core.Window) ?*core.Monitor {
+pub fn getWindowMonitor(window: *Window) ?*Monitor {
     return c.glfwGetWindowMonitor(window);
 }
 
@@ -288,8 +318,8 @@ pub fn getWindowMonitor(window: *core.Window) ?*core.Monitor {
 /// - monitor = null: makes the window windowed.
 /// - refresh_rate: use `glfw.c.GLFW_DONT_CARE` to let GLFW pick.
 pub fn setWindowMonitor(
-    window: *core.Window,
-    monitor: ?*core.Monitor,
+    window: *Window,
+    monitor: ?*Monitor,
     xpos: i32,
     ypos: i32,
     width: i32,
@@ -312,11 +342,11 @@ pub fn setWindowMonitor(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Window opacity in [0, 1]. May be unsupported on some platforms.
-pub fn getWindowOpacity(window: *core.Window) f32 {
+pub fn getWindowOpacity(window: *Window) f32 {
     return c.glfwGetWindowOpacity(window);
 }
 
-pub fn setWindowOpacity(window: *core.Window, opacity: f32) void {
+pub fn setWindowOpacity(window: *Window, opacity: f32) void {
     c.glfwSetWindowOpacity(window, opacity);
 }
 
@@ -324,11 +354,11 @@ pub fn setWindowOpacity(window: *core.Window, opacity: f32) void {
 ///
 /// Typical pattern is to store a *opaque app struct here and recover it in
 /// callbacks via `getWindowUserPointer`.
-pub fn setWindowUserPointer(window: *core.Window, ptr: ?*anyopaque) void {
+pub fn setWindowUserPointer(window: *Window, ptr: ?*anyopaque) void {
     c.glfwSetWindowUserPointer(window, ptr);
 }
 
-pub fn getWindowUserPointer(window: *core.Window) ?*anyopaque {
+pub fn getWindowUserPointer(window: *Window) ?*anyopaque {
     return c.glfwGetWindowUserPointer(window);
 }
 
@@ -387,6 +417,10 @@ pub fn getClipboardString(window: *Window) ?[:0]const u8 {
     if (ptr == null) return null;
     return std.mem.span(ptr);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Native Win32 handle (Windows-only at runtime)
+// ─────────────────────────────────────────────────────────────────────────────
 
 /// Return the native Win32 HWND for a GLFW window (Windows only).
 ///

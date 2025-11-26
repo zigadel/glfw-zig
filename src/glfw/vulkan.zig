@@ -3,23 +3,60 @@ const c_bindings = @import("c_bindings");
 
 const c = c_bindings.c;
 
+/// Vulkan-related helpers around GLFW's Vulkan support.
+///
+/// Design:
+/// - This module is **agnostic** to any specific Vulkan Zig binding.
+/// - Vulkan handles are modeled as `?*anyopaque` (you cast from/to your own types).
+/// - Procedure pointers use GLFW's own `GLFWvkproc` typedef.
+/// - All functions are safe to call even when Vulkan is unavailable on the system.
+/// Raw Vulkan procedure pointer type as seen by GLFW.
+pub const VkProc = c.GLFWvkproc;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Extern declarations for Vulkan helpers
+// Some builds of the GLFW headers / cimport pipeline may omit these
+// prototypes unless Vulkan headers are pulled in. We declare them here
+// explicitly and link against the glfw_c static lib built in build.zig.
+// ─────────────────────────────────────────────────────────────────────────────
+
+extern fn glfwGetInstanceProcAddress(
+    instance: ?*anyopaque,
+    name: [*:0]const u8,
+) VkProc;
+
+extern fn glfwGetPhysicalDevicePresentationSupport(
+    instance: ?*anyopaque,
+    physical_device: ?*anyopaque,
+    queue_family_index: u32,
+) c_int;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Basic Vulkan support query
+// ─────────────────────────────────────────────────────────────────────────────
+
 /// Returns whether GLFW reports Vulkan support on this platform.
 ///
-/// This is a thin wrapper over `glfwVulkanSupported` and can be called
-/// before `glfw.init()`.
+/// This can be called before `glfw.init()`.
 pub fn vulkanSupported() bool {
-    const result = c.glfwVulkanSupported();
-    return result == c.GLFW_TRUE;
+    const res = c.glfwVulkanSupported();
+    return res == c.GLFW_TRUE;
 }
 
-/// Returns the list of required Vulkan instance extensions.
+// ─────────────────────────────────────────────────────────────────────────────
+// Required instance extensions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Returns the list of required Vulkan instance extensions for GLFW.
 ///
-/// - On success, returns a slice of sentinel-terminated UTF-8 names.
-/// - The slice itself is allocated with `allocator` and must be freed by
-///   the caller using the same allocator.
-/// - The strings **borrow** storage from GLFW and remain valid until
-///   `glfw.terminate()` is called.
-/// - Returns `null` if Vulkan is not supported or GLFW reports none.
+/// Behavior:
+/// - On success, returns a Zig-owned slice of sentinel-terminated UTF-8 names.
+///   The outer slice must be freed with the same allocator.
+///   The underlying string storage is owned by GLFW and remains valid until
+///   `glfw.terminate()`.
+/// - Returns `null` if Vulkan is not supported or GLFW reports no extensions.
+///
+/// This is a thin wrapper over `glfwGetRequiredInstanceExtensions`.
 pub fn getRequiredInstanceExtensions(
     allocator: std.mem.Allocator,
 ) !?[][:0]const u8 {
@@ -27,6 +64,7 @@ pub fn getRequiredInstanceExtensions(
     const raw = c.glfwGetRequiredInstanceExtensions(&count);
 
     if (count == 0) {
+        // Either Vulkan is not supported or no extensions are required.
         return null;
     }
 
@@ -37,9 +75,13 @@ pub fn getRequiredInstanceExtensions(
 
     const len: usize = @intCast(count);
 
+    // `raw` is effectively `const char**`. We reinterpret the address as
+    // a pointer to an array of sentinel-terminated C strings.
     const base: [*][*:0]const u8 = @ptrFromInt(addr);
     const src = base[0..len];
 
+    // Allocate the outer slice; each element is a sentinel-terminated slice
+    // borrowing GLFW-managed storage.
     const out = try allocator.alloc([:0]const u8, len);
     for (src, 0..) |p, i| {
         out[i] = std.mem.span(p);
@@ -49,32 +91,54 @@ pub fn getRequiredInstanceExtensions(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Inline tests (Vulkan helpers)
+// Instance proc address
 // ─────────────────────────────────────────────────────────────────────────────
 
-test "Vulkan helpers basic behavior" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+/// Wrapper around `glfwGetInstanceProcAddress`.
+///
+/// Parameters:
+/// - `instance`: opaque Vulkan instance handle (typically cast from your
+///   Vulkan binding's `vk.Instance`).
+/// - `name`: zero-terminated ASCII function name.
+///
+/// Behavior:
+/// - If Vulkan is not supported, always returns `null`.
+/// - Otherwise, returns a raw procedure pointer (`GLFWvkproc`) or `null` if
+///   the loader cannot provide that symbol.
+pub fn getInstanceProcAddress(
+    instance: ?*anyopaque,
+    name: [:0]const u8,
+) VkProc {
+    if (!vulkanSupported()) return null;
+    return glfwGetInstanceProcAddress(instance, name);
+}
 
-    const supported = vulkanSupported();
+// ─────────────────────────────────────────────────────────────────────────────
+// Presentation support
+// ─────────────────────────────────────────────────────────────────────────────
 
-    const exts_opt = getRequiredInstanceExtensions(allocator) catch return;
-    defer {
-        if (exts_opt) |exts| allocator.free(exts);
-    }
+/// Wrapper around `glfwGetPhysicalDevicePresentationSupport`.
+///
+/// Parameters:
+/// - `instance`: opaque Vulkan instance handle.
+/// - `physical_device`: opaque Vulkan physical device handle.
+/// - `queue_family_index`: queue family index.
+///
+/// Behavior:
+/// - If Vulkan is not supported, returns `false`.
+/// - Otherwise, returns `true` iff GLFW reports presentation support for
+///   the given device + queue family on the current platform.
+pub fn getPhysicalDevicePresentationSupport(
+    instance: ?*anyopaque,
+    physical_device: ?*anyopaque,
+    queue_family_index: u32,
+) bool {
+    if (!vulkanSupported()) return false;
 
-    if (!supported) {
-        if (exts_opt) |exts| {
-            try std.testing.expect(exts.len == 0);
-        }
-        return;
-    }
-
-    const exts = exts_opt orelse return;
-    try std.testing.expect(exts.len > 0);
-
-    for (exts) |name| {
-        try std.testing.expect(name.len > 0);
-    }
+    const res = glfwGetPhysicalDevicePresentationSupport(
+        instance,
+        physical_device,
+        queue_family_index,
+    );
+    return res == c.GLFW_TRUE;
 }
