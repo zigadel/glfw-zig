@@ -124,11 +124,23 @@ pub const getProcAddress = core.getProcAddress;
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub const VideoMode = monitor.VideoMode;
+pub const MonitorPos = monitor.MonitorPos;
+pub const MonitorWorkarea = monitor.MonitorWorkarea;
+pub const MonitorPhysicalSize = monitor.MonitorPhysicalSize;
+pub const MonitorContentScale = monitor.MonitorContentScale;
+
 pub const getPrimaryMonitor = monitor.getPrimaryMonitor;
 pub const getMonitors = monitor.getMonitors;
 pub const getVideoMode = monitor.getVideoMode;
 pub const getVideoModes = monitor.getVideoModes;
 pub const getMonitorName = monitor.getMonitorName;
+pub const getMonitorPos = monitor.getMonitorPos;
+pub const getMonitorWorkarea = monitor.getMonitorWorkarea;
+pub const getMonitorPhysicalSize = monitor.getMonitorPhysicalSize;
+pub const getMonitorContentScale = monitor.getMonitorContentScale;
+pub const setMonitorUserPointer = monitor.setMonitorUserPointer;
+pub const getMonitorUserPointer = monitor.getMonitorUserPointer;
+pub const setGamma = monitor.setGamma;
 
 // (If monitor.zig exposes more helpers like getMonitorPos / getMonitorContentScale,
 // you can re-export them here in the same style.)

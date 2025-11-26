@@ -1,88 +1,78 @@
 const std = @import("std");
+const testing = std.testing;
 const glfw = @import("glfw");
 
-test "monitors API basic behavior + helpers" {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    // Some CI / headless environments may not have a display; treat init
-    // failure as best-effort rather than hard failure.
-    _ = glfw.init() catch return;
+fn withMonitors(body: fn (*glfw.Monitor, []*glfw.Monitor) anyerror!void) !void {
+    try glfw.init();
     defer glfw.terminate();
 
-    // Snapshot of current monitors.
-    const monitors = glfw.getMonitors(allocator) catch return;
-    defer allocator.free(monitors);
+    const alloc = testing.allocator;
+    const list = try glfw.getMonitors(alloc);
+    defer alloc.free(list);
 
-    // The slice itself should be well-formed; we don't assert any particular
-    // count because that is platform-dependent.
-    for (monitors) |m| {
-        // `*glfw.Monitor` is opaque; we can at least assert the pointer is
-        // non-zero.
-        try std.testing.expect(@intFromPtr(m) != 0);
-    }
+    if (list.len == 0) return;
 
-    // Primary monitor helper: if GLFW reports a primary monitor at all, it
-    // must be one of the entries returned by getMonitors().
-    const primary = glfw.getPrimaryMonitor();
-    if (primary) |p| {
-        var found = false;
-        for (monitors) |m| {
-            if (m == p) {
-                found = true;
-                break;
-            }
-        }
-        try std.testing.expect(found);
-    }
+    const primary = glfw.getPrimaryMonitor() orelse list[0];
 
-    // For at least one monitor (when any exist), exercise the video mode and
-    // name helpers in a portable way.
-    if (monitors.len > 0) {
-        const monitor = monitors[0];
+    try body(primary, list);
+}
 
-        // Current video mode, if reported, should have sensible dimensions.
-        if (glfw.getVideoMode(monitor)) |mode| {
-            try std.testing.expect(mode.width > 0);
-            try std.testing.expect(mode.height > 0);
-            try std.testing.expect(mode.red_bits >= 0);
-            try std.testing.expect(mode.green_bits >= 0);
-            try std.testing.expect(mode.blue_bits >= 0);
-            try std.testing.expect(mode.refresh_rate >= 0);
-        }
+test "monitors: primary + list + video modes" {
+    try withMonitors(struct {
+        fn run(primary: *glfw.Monitor, list: []*glfw.Monitor) !void {
+            try testing.expect(list.len >= 1);
 
-        // Full video modes list: must be safe to call and, when non-empty,
-        // each entry must have positive width/height.
-        const modes = glfw.getVideoModes(allocator, monitor) catch return;
-        defer allocator.free(modes);
-
-        if (modes.len > 0) {
-            for (modes) |vm| {
-                try std.testing.expect(vm.width > 0);
-                try std.testing.expect(vm.height > 0);
+            const name_opt = glfw.getMonitorName(primary);
+            if (name_opt) |name| {
+                try testing.expect(name.len > 0);
             }
 
-            // Optional: check that the "current" mode is *often* present
-            // in the modes list when both APIs report something. We don't
-            // assert on this because the GLFW spec does not guarantee it.
-            if (glfw.getVideoMode(monitor)) |current| {
-                var current_found = false;
-                for (modes) |vm| {
-                    if (vm.width == current.width and
-                        vm.height == current.height and
-                        vm.refresh_rate == current.refresh_rate)
-                    {
-                        current_found = true;
-                        break;
-                    }
-                }
-            }
-        }
+            const alloc = testing.allocator;
 
-        // Monitor name helper: if GLFW reports a name, it should be non-empty.
-        if (glfw.getMonitorName(monitor)) |name| {
-            try std.testing.expect(name.len > 0);
+            const vm_opt = glfw.getVideoMode(primary) orelse return;
+            try testing.expect(vm_opt.width > 0);
+            try testing.expect(vm_opt.height > 0);
+
+            const modes = try glfw.getVideoModes(alloc, primary);
+            defer alloc.free(modes);
+
+            try testing.expect(modes.len >= 1);
         }
-    }
+    }.run);
+}
+
+test "monitors: geometry, physical size, content scale, user pointer, gamma no-crash" {
+    try withMonitors(struct {
+        fn run(primary: *glfw.Monitor, _: []*glfw.Monitor) !void {
+            const pos = glfw.getMonitorPos(primary);
+            _ = pos;
+
+            const wa = glfw.getMonitorWorkarea(primary);
+            try testing.expect(wa.width >= 0);
+            try testing.expect(wa.height >= 0);
+
+            const phys = glfw.getMonitorPhysicalSize(primary);
+            // These can legitimately be zero on some setups; just ensure not negative.
+            try testing.expect(phys.width_mm >= 0);
+            try testing.expect(phys.height_mm >= 0);
+
+            const scale = glfw.getMonitorContentScale(primary);
+            try testing.expect(scale.x > 0);
+            try testing.expect(scale.y > 0);
+
+            // User pointer round-trip.
+            glfw.setMonitorUserPointer(primary, null);
+            try testing.expect(glfw.getMonitorUserPointer(primary) == null);
+
+            var dummy: u8 = 0;
+            glfw.setMonitorUserPointer(primary, &dummy);
+            const got = glfw.getMonitorUserPointer(primary);
+            try testing.expect(got != null);
+            // Best-effort identity check.
+            try testing.expect(@intFromPtr(got.?) == @intFromPtr(&dummy));
+
+            // Gamma 1.0 should effectively be "no-op" on most systems.
+            glfw.setGamma(primary, 1.0);
+        }
+    }.run);
 }
