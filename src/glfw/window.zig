@@ -458,6 +458,107 @@ pub fn getKeyScancode(key: c_int) c_int {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Window & input callbacks
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub const WindowPosCallback = c.GLFWwindowposfun;
+pub const WindowSizeCallback = c.GLFWwindowsizefun;
+pub const WindowCloseCallback = c.GLFWwindowclosefun;
+pub const WindowRefreshCallback = c.GLFWwindowrefreshfun;
+pub const WindowFocusCallback = c.GLFWwindowfocusfun;
+pub const WindowIconifyCallback = c.GLFWwindowiconifyfun;
+pub const WindowMaximizeCallback = c.GLFWwindowmaximizefun;
+pub const FramebufferSizeCallback = c.GLFWframebuffersizefun;
+pub const WindowContentScaleCallback = c.GLFWwindowcontentscalefun;
+
+pub const MouseButtonCallback = c.GLFWmousebuttonfun;
+pub const CursorPosCallback = c.GLFWcursorposfun;
+pub const CursorEnterCallback = c.GLFWcursorenterfun;
+pub const ScrollCallback = c.GLFWscrollfun;
+pub const KeyCallback = c.GLFWkeyfun;
+pub const CharCallback = c.GLFWcharfun;
+pub const CharModsCallback = c.GLFWcharmodsfun;
+pub const DropCallback = c.GLFWdropfun;
+
+/// Each setter returns the previously installed callback (if any).
+pub fn setWindowPosCallback(window: *Window, cb: WindowPosCallback) WindowPosCallback {
+    return c.glfwSetWindowPosCallback(window, cb);
+}
+
+pub fn setWindowSizeCallback(window: *Window, cb: WindowSizeCallback) WindowSizeCallback {
+    return c.glfwSetWindowSizeCallback(window, cb);
+}
+
+pub fn setWindowCloseCallback(window: *Window, cb: WindowCloseCallback) WindowCloseCallback {
+    return c.glfwSetWindowCloseCallback(window, cb);
+}
+
+pub fn setWindowRefreshCallback(window: *Window, cb: WindowRefreshCallback) WindowRefreshCallback {
+    return c.glfwSetWindowRefreshCallback(window, cb);
+}
+
+pub fn setWindowFocusCallback(window: *Window, cb: WindowFocusCallback) WindowFocusCallback {
+    return c.glfwSetWindowFocusCallback(window, cb);
+}
+
+pub fn setWindowIconifyCallback(window: *Window, cb: WindowIconifyCallback) WindowIconifyCallback {
+    return c.glfwSetWindowIconifyCallback(window, cb);
+}
+
+pub fn setWindowMaximizeCallback(window: *Window, cb: WindowMaximizeCallback) WindowMaximizeCallback {
+    return c.glfwSetWindowMaximizeCallback(window, cb);
+}
+
+pub fn setFramebufferSizeCallback(
+    window: *Window,
+    cb: FramebufferSizeCallback,
+) FramebufferSizeCallback {
+    return c.glfwSetFramebufferSizeCallback(window, cb);
+}
+
+pub fn setWindowContentScaleCallback(
+    window: *Window,
+    cb: WindowContentScaleCallback,
+) WindowContentScaleCallback {
+    return c.glfwSetWindowContentScaleCallback(window, cb);
+}
+
+pub fn setMouseButtonCallback(
+    window: *Window,
+    cb: MouseButtonCallback,
+) MouseButtonCallback {
+    return c.glfwSetMouseButtonCallback(window, cb);
+}
+
+pub fn setCursorPosCallback(window: *Window, cb: CursorPosCallback) CursorPosCallback {
+    return c.glfwSetCursorPosCallback(window, cb);
+}
+
+pub fn setCursorEnterCallback(window: *Window, cb: CursorEnterCallback) CursorEnterCallback {
+    return c.glfwSetCursorEnterCallback(window, cb);
+}
+
+pub fn setScrollCallback(window: *Window, cb: ScrollCallback) ScrollCallback {
+    return c.glfwSetScrollCallback(window, cb);
+}
+
+pub fn setKeyCallback(window: *Window, cb: KeyCallback) KeyCallback {
+    return c.glfwSetKeyCallback(window, cb);
+}
+
+pub fn setCharCallback(window: *Window, cb: CharCallback) CharCallback {
+    return c.glfwSetCharCallback(window, cb);
+}
+
+pub fn setCharModsCallback(window: *Window, cb: CharModsCallback) CharModsCallback {
+    return c.glfwSetCharModsCallback(window, cb);
+}
+
+pub fn setDropCallback(window: *Window, cb: DropCallback) DropCallback {
+    return c.glfwSetDropCallback(window, cb);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Inline tests (window-level)
 // ─────────────────────────────────────────────────────────────────────────────
 

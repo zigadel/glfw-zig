@@ -52,6 +52,21 @@ pub const ErrorCode = enum(c_int) {
     platform_unavailable = c.GLFW_PLATFORM_UNAVAILABLE,
 };
 
+/// Error callback type (mirrors GLFWerrorfun).
+///
+/// Signature (from glfw3.h):
+///   void callback(int error, const char* description);
+pub const ErrorCallback = c.GLFWerrorfun;
+
+/// Install or clear the global error callback.
+///
+/// - Pass a non-null function pointer to install a callback.
+/// - Pass `null` to clear any existing callback.
+/// - Returns the previously installed callback (if any).
+pub fn setErrorCallback(cb: ErrorCallback) ErrorCallback {
+    return c.glfwSetErrorCallback(cb);
+}
+
 /// Supported GLFW platform identifiers for glfwGetPlatform / glfwPlatformSupported.
 pub const Platform = enum(c_int) {
     any = c.GLFW_ANY_PLATFORM,

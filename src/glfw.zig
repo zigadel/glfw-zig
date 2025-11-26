@@ -254,3 +254,53 @@ pub const getGamepadState = joystick.getGamepadState;
 pub const updateGamepadMappings = joystick.updateGamepadMappings;
 
 pub const setJoystickCallback = joystick.setJoystickCallback;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Callback types
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub const ErrorCallback = core.ErrorCallback;
+
+pub const WindowPosCallback = window.WindowPosCallback;
+pub const WindowSizeCallback = window.WindowSizeCallback;
+pub const WindowCloseCallback = window.WindowCloseCallback;
+pub const WindowRefreshCallback = window.WindowRefreshCallback;
+pub const WindowFocusCallback = window.WindowFocusCallback;
+pub const WindowIconifyCallback = window.WindowIconifyCallback;
+pub const WindowMaximizeCallback = window.WindowMaximizeCallback;
+pub const FramebufferSizeCallback = window.FramebufferSizeCallback;
+pub const WindowContentScaleCallback = window.WindowContentScaleCallback;
+
+pub const MouseButtonCallback = window.MouseButtonCallback;
+pub const CursorPosCallback = window.CursorPosCallback;
+pub const CursorEnterCallback = window.CursorEnterCallback;
+pub const ScrollCallback = window.ScrollCallback;
+pub const KeyCallback = window.KeyCallback;
+pub const CharCallback = window.CharCallback;
+pub const CharModsCallback = window.CharModsCallback;
+pub const DropCallback = window.DropCallback;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Callback setters
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub const setErrorCallback = core.setErrorCallback;
+
+pub const setWindowPosCallback = window.setWindowPosCallback;
+pub const setWindowSizeCallback = window.setWindowSizeCallback;
+pub const setWindowCloseCallback = window.setWindowCloseCallback;
+pub const setWindowRefreshCallback = window.setWindowRefreshCallback;
+pub const setWindowFocusCallback = window.setWindowFocusCallback;
+pub const setWindowIconifyCallback = window.setWindowIconifyCallback;
+pub const setWindowMaximizeCallback = window.setWindowMaximizeCallback;
+pub const setFramebufferSizeCallback = window.setFramebufferSizeCallback;
+pub const setWindowContentScaleCallback = window.setWindowContentScaleCallback;
+
+pub const setMouseButtonCallback = window.setMouseButtonCallback;
+pub const setCursorPosCallback = window.setCursorPosCallback;
+pub const setCursorEnterCallback = window.setCursorEnterCallback;
+pub const setScrollCallback = window.setScrollCallback;
+pub const setKeyCallback = window.setKeyCallback;
+pub const setCharCallback = window.setCharCallback;
+pub const setCharModsCallback = window.setCharModsCallback;
+pub const setDropCallback = window.setDropCallback;
