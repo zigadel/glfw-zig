@@ -22,9 +22,10 @@ You get:
 - **Raw escape hatch**  
   Full C API is still exposed under `glfw.c` if you need the exact GLFW surface.
 
-- **Cross-platform**  
-  - Windows (Win32 backend)  
-  - macOS (Cocoa backend)  
+- **Cross-platform**
+
+  - Windows (Win32 backend)
+  - macOS (Cocoa backend)
   - Linux (X11 backend)
 
 - **Trustworthy**  
@@ -34,11 +35,11 @@ You get:
 
 ## Platform support
 
-| Platform | Backend | Status                          |
-|----------|---------|---------------------------------|
-| Windows  | Win32   | ✅ builds + tests green         |
-| macOS    | Cocoa   | ✅ builds + tests green         |
-| Linux    | X11     | ✅ builds + tests green (X11)   |
+| Platform | Backend | Status                        |
+| -------- | ------- | ----------------------------- |
+| Windows  | Win32   | ✅ builds + tests green       |
+| macOS    | Cocoa   | ✅ builds + tests green       |
+| Linux    | X11     | ✅ builds + tests green (X11) |
 
 Notes for Linux:
 
@@ -375,7 +376,7 @@ API:
 
 Error callback:
 
-- `glfw.ErrorCallback`  
+- `glfw.ErrorCallback`
 - `glfw.setErrorCallback(cb: ?ErrorCallback) ?ErrorCallback`
 
 Window & input callbacks:
