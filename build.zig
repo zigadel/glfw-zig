@@ -99,7 +99,7 @@ fn buildGlfwCLib(
             glfw_c.linkSystemLibrary("winmm");
         },
         .linux => {
-            // X11 backend by default (works fine via XWayland on Wayland setups).
+            // X11 backend (works via XWayland on Wayland setups).
             const linux_flags = &[_][]const u8{
                 "-D_GLFW_X11",
             };
@@ -151,12 +151,12 @@ fn buildGlfwCLib(
             addCommonSources(glfw_c, glfw_dep, cocoa_flags);
 
             const cocoa_rel = [_][]const u8{
-                "src/cocoa_init.c",
-                "src/cocoa_monitor.c",
-                "src/cocoa_window.c",
-                "src/cocoa_joystick.c",
+                "src/cocoa_init.m",
+                "src/cocoa_monitor.m",
+                "src/cocoa_window.m",
+                "src/cocoa_joystick.m",
                 "src/cocoa_time.c",
-                "src/nsgl_context.c",
+                "src/nsgl_context.m",
                 "src/posix_thread.c",
                 "src/posix_module.c",
             };
