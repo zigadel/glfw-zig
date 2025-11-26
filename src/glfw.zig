@@ -1,3 +1,5 @@
+/// Public façade for glfw-zig.
+/// Import this as `@import("glfw")` for a complete, ziggified GLFW 3.4 API.
 const c_bindings = @import("c_bindings");
 const core = @import("core");
 const window = @import("window");
@@ -8,14 +10,13 @@ const joystick = @import("joystick");
 pub const c = c_bindings.c;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Handle types (opaque GLFW objects)
+// Handle types (opaque GLFW objects) + common key/action helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub const Window = c_bindings.Window;
 pub const Monitor = c_bindings.Monitor;
 pub const Cursor = c_bindings.Cursor;
 
-// Common key/action helpers
 pub const KeyEscape = c.GLFW_KEY_ESCAPE;
 pub const Press = c.GLFW_PRESS;
 pub const Release = c.GLFW_RELEASE;
@@ -30,7 +31,7 @@ pub const ErrorCode = core.ErrorCode;
 pub const errorCodeFromC = core.errorCodeFromC;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Initialization / shutdown
+// Initialization / shutdown / init hints
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub const init = core.init;
@@ -72,7 +73,7 @@ pub const getTimerValue = core.getTimerValue;
 pub const getTimerFrequency = core.getTimerFrequency;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Window API (lifecycle + loop)
+// Window API (lifecycle, loop, input)
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub const createWindow = window.createWindow;
@@ -81,14 +82,15 @@ pub const windowShouldClose = window.windowShouldClose;
 pub const setWindowShouldClose = window.setWindowShouldClose;
 
 pub const getKey = window.getKey;
+pub const getMouseButton = window.getMouseButton;
+pub const getKeyName = window.getKeyName;
+pub const getKeyScancode = window.getKeyScancode;
+
 pub const pollEvents = window.pollEvents;
 pub const waitEventsTimeout = window.waitEventsTimeout;
 pub const postEmptyEvent = window.postEmptyEvent;
 pub const swapInterval = window.swapInterval;
 pub const swapBuffers = window.swapBuffers;
-pub const getMouseButton = window.getMouseButton;
-pub const getKeyName = window.getKeyName;
-pub const getKeyScancode = window.getKeyScancode;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Window hints & attributes
@@ -99,72 +101,6 @@ pub const windowHint = window.windowHint;
 pub const windowHintString = window.windowHintString;
 pub const getWindowAttrib = window.getWindowAttrib;
 pub const setWindowAttrib = window.setWindowAttrib;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Cursor position / input modes / cursor objects / clipboard
-// ─────────────────────────────────────────────────────────────────────────────
-
-pub const getCursorPos = window.getCursorPos;
-pub const setCursorPos = window.setCursorPos;
-
-pub const setInputMode = window.setInputMode;
-pub const getInputMode = window.getInputMode;
-
-pub const setCursor = window.setCursor;
-pub const createStandardCursor = window.createStandardCursor;
-pub const destroyCursor = window.destroyCursor;
-
-pub const setClipboardString = window.setClipboardString;
-pub const getClipboardString = window.getClipboardString;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Context API (OpenGL/EGL/OSMesa) — lives in core.zig
-// ─────────────────────────────────────────────────────────────────────────────
-
-pub const GlProc = core.GlProc;
-pub const makeContextCurrent = core.makeContextCurrent;
-pub const getCurrentContext = core.getCurrentContext;
-pub const getProcAddress = core.getProcAddress;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Monitor API
-// ─────────────────────────────────────────────────────────────────────────────
-
-pub const VideoMode = monitor.VideoMode;
-pub const MonitorPos = monitor.MonitorPos;
-pub const MonitorWorkarea = monitor.MonitorWorkarea;
-pub const MonitorPhysicalSize = monitor.MonitorPhysicalSize;
-pub const MonitorContentScale = monitor.MonitorContentScale;
-
-pub const getPrimaryMonitor = monitor.getPrimaryMonitor;
-pub const getMonitors = monitor.getMonitors;
-pub const getVideoMode = monitor.getVideoMode;
-pub const getVideoModes = monitor.getVideoModes;
-pub const getMonitorName = monitor.getMonitorName;
-pub const getMonitorPos = monitor.getMonitorPos;
-pub const getMonitorWorkarea = monitor.getMonitorWorkarea;
-pub const getMonitorPhysicalSize = monitor.getMonitorPhysicalSize;
-pub const getMonitorContentScale = monitor.getMonitorContentScale;
-pub const setMonitorUserPointer = monitor.setMonitorUserPointer;
-pub const getMonitorUserPointer = monitor.getMonitorUserPointer;
-pub const setGamma = monitor.setGamma;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Vulkan helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-pub const VkProc = vulkan.VkProc;
-pub const vulkanSupported = vulkan.vulkanSupported;
-pub const getRequiredInstanceExtensions = vulkan.getRequiredInstanceExtensions;
-pub const getInstanceProcAddress = vulkan.getInstanceProcAddress;
-pub const getPhysicalDevicePresentationSupport =
-    vulkan.getPhysicalDevicePresentationSupport;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Native platform handles
-// ─────────────────────────────────────────────────────────────────────────────
-
-pub const getWin32Window = window.getWin32Window;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Window-related types
@@ -212,7 +148,24 @@ pub const isFocused = window.isFocused;
 pub const isHovered = window.isHovered;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Monitor binding
+// Cursor position / input modes / cursor objects / clipboard
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub const getCursorPos = window.getCursorPos;
+pub const setCursorPos = window.setCursorPos;
+
+pub const setInputMode = window.setInputMode;
+pub const getInputMode = window.getInputMode;
+
+pub const setCursor = window.setCursor;
+pub const createStandardCursor = window.createStandardCursor;
+pub const destroyCursor = window.destroyCursor;
+
+pub const setClipboardString = window.setClipboardString;
+pub const getClipboardString = window.getClipboardString;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Monitor binding (window ↔ monitor)
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub const getWindowMonitor = window.getWindowMonitor;
@@ -228,6 +181,38 @@ pub const setWindowUserPointer = window.setWindowUserPointer;
 pub const getWindowUserPointer = window.getWindowUserPointer;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Context API (OpenGL/EGL/OSMesa) — lives in core.zig
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub const GlProc = core.GlProc;
+pub const makeContextCurrent = core.makeContextCurrent;
+pub const getCurrentContext = core.getCurrentContext;
+pub const getProcAddress = core.getProcAddress;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Monitor API
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub const VideoMode = monitor.VideoMode;
+pub const MonitorPos = monitor.MonitorPos;
+pub const MonitorWorkarea = monitor.MonitorWorkarea;
+pub const MonitorPhysicalSize = monitor.MonitorPhysicalSize;
+pub const MonitorContentScale = monitor.MonitorContentScale;
+
+pub const getPrimaryMonitor = monitor.getPrimaryMonitor;
+pub const getMonitors = monitor.getMonitors;
+pub const getVideoMode = monitor.getVideoMode;
+pub const getVideoModes = monitor.getVideoModes;
+pub const getMonitorName = monitor.getMonitorName;
+pub const getMonitorPos = monitor.getMonitorPos;
+pub const getMonitorWorkarea = monitor.getMonitorWorkarea;
+pub const getMonitorPhysicalSize = monitor.getMonitorPhysicalSize;
+pub const getMonitorContentScale = monitor.getMonitorContentScale;
+pub const setMonitorUserPointer = monitor.setMonitorUserPointer;
+pub const getMonitorUserPointer = monitor.getMonitorUserPointer;
+pub const setGamma = monitor.setGamma;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Joystick / gamepad API
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -235,7 +220,6 @@ pub const JoystickId = joystick.JoystickId;
 pub const MaxGamepadAxes = joystick.MaxGamepadAxes;
 pub const MaxGamepadButtons = joystick.MaxGamepadButtons;
 pub const GamepadState = joystick.GamepadState;
-pub const JoystickCallback = joystick.JoystickCallback;
 
 pub const joystickPresent = joystick.joystickPresent;
 pub const getJoystickName = joystick.getJoystickName;
@@ -253,7 +237,22 @@ pub const getGamepadName = joystick.getGamepadName;
 pub const getGamepadState = joystick.getGamepadState;
 pub const updateGamepadMappings = joystick.updateGamepadMappings;
 
-pub const setJoystickCallback = joystick.setJoystickCallback;
+// ─────────────────────────────────────────────────────────────────────────────
+// Vulkan helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub const VkProc = vulkan.VkProc;
+pub const vulkanSupported = vulkan.vulkanSupported;
+pub const getRequiredInstanceExtensions = vulkan.getRequiredInstanceExtensions;
+pub const getInstanceProcAddress = vulkan.getInstanceProcAddress;
+pub const getPhysicalDevicePresentationSupport =
+    vulkan.getPhysicalDevicePresentationSupport;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Native platform handles
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub const getWin32Window = window.getWin32Window;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Callback types
@@ -280,6 +279,8 @@ pub const CharCallback = window.CharCallback;
 pub const CharModsCallback = window.CharModsCallback;
 pub const DropCallback = window.DropCallback;
 
+pub const JoystickCallback = joystick.JoystickCallback;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Callback setters
 // ─────────────────────────────────────────────────────────────────────────────
@@ -304,3 +305,5 @@ pub const setKeyCallback = window.setKeyCallback;
 pub const setCharCallback = window.setCharCallback;
 pub const setCharModsCallback = window.setCharModsCallback;
 pub const setDropCallback = window.setDropCallback;
+
+pub const setJoystickCallback = joystick.setJoystickCallback;
