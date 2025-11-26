@@ -1,6 +1,6 @@
 # glfw-zig
 
-Thin, idiomatic Zig bindings for **GLFW 3.4** — the battle‑tested C library for cross‑platform windows, input, monitors, and Vulkan/OpenGL context creation.
+Zig (nightly) bindings for **GLFW 3.4** — the battle‑tested C library for cross‑platform windows, input, monitors, and Vulkan/OpenGL context creation.
 
 `glfw-zig` vendors and builds GLFW for you via Zig’s build system, then exposes a clean Zig API on top. You get a **single dependency** that:
 
@@ -30,8 +30,6 @@ This is meant to be a **production‑ready foundation** for engines, tools, and 
 ---
 
 ## Directory layout
-
-Current layout (mirrors the ideal layout checked into `ideal-project-directory-structure.txt`):
 
 ```text
 glfw-zig/
@@ -349,7 +347,7 @@ This is meant to be a **foundation piece**, not a framework: you bring your rend
 
 ## Licensing
 
-This project is **deliberately license‑free** in the spirit of SQLite.
+This project is **deliberately license‑free**
 
 - There is no `LICENSE` file.
 - You may **use, copy, modify, and redistribute** this code, in source or binary form, for **any purpose** (including commercial) **without asking for permission**.
