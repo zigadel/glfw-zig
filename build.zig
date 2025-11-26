@@ -54,9 +54,6 @@ fn buildGlfwCLib(
     // Platform-specific bits (Windows for now).
     switch (os_tag) {
         .windows => {
-            // IMPORTANT: these defines must apply to ALL relevant sources,
-            // not just the win32_* files. Otherwise GLFW falls back to the
-            // Null platform backend, which is exactly what we were seeing.
             const win_flags = &[_][]const u8{
                 "-D_GLFW_WIN32",
                 "-DUNICODE",
@@ -117,15 +114,69 @@ pub fn build(b: *std.Build) void {
     const glfw_c = glfw_c_build.lib;
     const glfw_include = glfw_c_build.include_dir;
 
-    // 2) Zig wrapper module (src/glfw.zig).
+    // 2) Internal Zig modules (wired via named imports, Zigadel-style).
+    const c_bindings_mod = b.createModule(.{
+        .root_source_file = b.path("src/glfw/c_bindings.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    // c_import lives here, so it needs the C include path.
+    c_bindings_mod.addIncludePath(glfw_include);
+
+    const core_mod = b.createModule(.{
+        .root_source_file = b.path("src/glfw/core.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    core_mod.addImport("c_bindings", c_bindings_mod);
+
+    const window_mod = b.createModule(.{
+        .root_source_file = b.path("src/glfw/window.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    window_mod.addImport("c_bindings", c_bindings_mod);
+    window_mod.addImport("core", core_mod);
+
+    const context_mod = b.createModule(.{
+        .root_source_file = b.path("src/glfw/context.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    context_mod.addImport("c_bindings", c_bindings_mod);
+    context_mod.addImport("core", core_mod);
+    context_mod.addImport("window", window_mod);
+
+    const monitor_mod = b.createModule(.{
+        .root_source_file = b.path("src/glfw/monitor.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    monitor_mod.addImport("c_bindings", c_bindings_mod);
+    monitor_mod.addImport("core", core_mod);
+
+    const vulkan_mod = b.createModule(.{
+        .root_source_file = b.path("src/glfw/vulkan.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    vulkan_mod.addImport("c_bindings", c_bindings_mod);
+
+    // 3) Public façade module (what users import as @import("glfw")).
     const glfw_mod = b.createModule(.{
         .root_source_file = b.path("src/glfw.zig"),
         .target = target,
         .optimize = optimize,
     });
     glfw_mod.addIncludePath(glfw_include);
+    glfw_mod.addImport("c_bindings", c_bindings_mod);
+    glfw_mod.addImport("core", core_mod);
+    glfw_mod.addImport("window", window_mod);
+    glfw_mod.addImport("monitor", monitor_mod);
+    glfw_mod.addImport("vulkan", vulkan_mod);
+    glfw_mod.addImport("context", context_mod);
 
-    // 3) Library artifact for the Zig wrapper: libglfw-zig.
+    // 4) Library artifact for the Zig wrapper: libglfw-zig.
     const lib = b.addLibrary(.{
         .name = "glfw-zig",
         .root_module = glfw_mod,
@@ -133,7 +184,7 @@ pub fn build(b: *std.Build) void {
     lib.linkLibrary(glfw_c);
     b.installArtifact(lib);
 
-    // 4) Sample executable (src/sample.zig).
+    // 5) Sample executable (src/sample.zig).
     const sample_mod = b.createModule(.{
         .root_source_file = b.path("src/sample.zig"),
         .target = target,
@@ -155,11 +206,11 @@ pub fn build(b: *std.Build) void {
     run_step.dependOn(&run_cmd.step);
 
     // ─────────────────────────────────────────────────────────────────────
-    // 5) Tests: unit (inline), conformance, integration, e2e
+    // 6) Tests: unit (inline), conformance, integration, e2e
     // ─────────────────────────────────────────────────────────────────────
 
-    // Unit tests: inline `test {}` blocks in src/glfw.zig
-    const unit_step = b.step("test-unit", "Run unit tests (inline in src/glfw.zig)");
+    // Unit tests: inline `test {}` blocks in src/glfw.zig + submodules.
+    const unit_step = b.step("test-unit", "Run unit tests (glfw façade + submodules)");
     {
         const unit_tests = b.addTest(.{
             .root_module = glfw_mod,
@@ -240,7 +291,10 @@ pub fn build(b: *std.Build) void {
     }
 
     // Aggregate step: run everything.
-    const test_step = b.step("test", "Run all GLFW test suites (unit + conformance + integration + e2e)");
+    const test_step = b.step(
+        "test",
+        "Run all GLFW test suites (unit + conformance + integration + e2e)",
+    );
     test_step.dependOn(unit_step);
     test_step.dependOn(conformance_step);
     test_step.dependOn(integration_step);
