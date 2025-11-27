@@ -272,7 +272,7 @@ pub fn build(b: *std.Build) void {
     joystick_mod.addImport("core", core_mod);
 
     // 3) Public façade module (what users import as @import("glfw")).
-    const glfw_mod = b.createModule(.{
+    const glfw_mod = b.addModule("glfw", .{
         .root_source_file = b.path("src/glfw.zig"),
         .target = target,
         .optimize = optimize,
